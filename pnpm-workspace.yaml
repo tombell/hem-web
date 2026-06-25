@@ -1,0 +1,4 @@
+enableGlobalVirtualStore: false
+allowBuilds:
+  better-sqlite3: true
+  esbuild: true

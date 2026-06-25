@@ -1,0 +1,1229 @@
+{
+  "components": {
+    "schemas": {
+      "AppleHealthImportPayload": {
+        "properties": {
+          "dailyMetrics": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/DailyMetricRecord"
+            },
+            "type": "array"
+          },
+          "generatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "range": {
+            "$ref": "#/components/schemas/ImportRange"
+          },
+          "samples": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SampleRecord"
+            },
+            "type": "array"
+          },
+          "schemaVersion": {
+            "const": 1,
+            "type": "integer"
+          },
+          "sleep": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SleepRecord"
+            },
+            "type": "array"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceInfo"
+          },
+          "workouts": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/WorkoutRecord"
+            },
+            "type": "array"
+          }
+        },
+        "required": ["schemaVersion", "source", "generatedAt", "range"],
+        "type": "object"
+      },
+      "DailyMetricRecord": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/QuantityValue"
+        },
+        "properties": {
+          "date": {
+            "format": "date",
+            "type": "string"
+          }
+        },
+        "required": ["date"],
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "properties": {
+              "category": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": ["category", "message"],
+            "type": "object"
+          },
+          "ok": {
+            "const": false
+          }
+        },
+        "required": ["ok", "error"],
+        "type": "object"
+      },
+      "DailyMetricQueryRow": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "importId": {
+            "type": "integer"
+          },
+          "metric": {
+            "type": "string"
+          },
+          "sourceKey": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          }
+        },
+        "required": ["id", "sourceKey", "date", "metric", "value", "unit", "importId", "updatedAt"],
+        "type": "object"
+      },
+      "DailyMetricsResponse": {
+        "properties": {
+          "dailyMetrics": {
+            "items": {
+              "$ref": "#/components/schemas/DailyMetricQueryRow"
+            },
+            "type": "array"
+          }
+        },
+        "required": ["dailyMetrics"],
+        "type": "object"
+      },
+      "ImportRange": {
+        "properties": {
+          "calendar": {
+            "type": "string"
+          },
+          "end": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "timeZone": {
+            "type": "string"
+          }
+        },
+        "required": ["start", "end", "calendar", "timeZone", "kind"],
+        "type": "object"
+      },
+      "ImportMetadata": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "generatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "payloadHash": {
+            "type": "string"
+          },
+          "range": {
+            "$ref": "#/components/schemas/ImportRange"
+          },
+          "schemaVersion": {
+            "const": 1
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceInfo"
+          },
+          "sourceKey": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "schemaVersion",
+          "range",
+          "sourceKey",
+          "source",
+          "generatedAt",
+          "payloadHash",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "ImportPayloadResponse": {
+        "properties": {
+          "import": {
+            "$ref": "#/components/schemas/ImportMetadata"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/AppleHealthImportPayload"
+          }
+        },
+        "required": ["import", "payload"],
+        "type": "object"
+      },
+      "ImportsResponse": {
+        "properties": {
+          "imports": {
+            "items": {
+              "$ref": "#/components/schemas/ImportMetadata"
+            },
+            "type": "array"
+          }
+        },
+        "required": ["imports"],
+        "type": "object"
+      },
+      "OkResponse": {
+        "properties": {
+          "ok": {
+            "const": true
+          }
+        },
+        "required": ["ok"],
+        "type": "object"
+      },
+      "QuantityValue": {
+        "properties": {
+          "unit": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          }
+        },
+        "required": ["value", "unit"],
+        "type": "object"
+      },
+      "SampleQueryRow": {
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "importId": {
+            "type": "integer"
+          },
+          "sourceKey": {
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "sourceKey",
+          "type",
+          "start",
+          "end",
+          "value",
+          "unit",
+          "importId",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "SampleRecord": {
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          }
+        },
+        "required": ["type", "start", "end", "value", "unit"],
+        "type": "object"
+      },
+      "SamplesResponse": {
+        "properties": {
+          "samples": {
+            "items": {
+              "$ref": "#/components/schemas/SampleQueryRow"
+            },
+            "type": "array"
+          }
+        },
+        "required": ["samples"],
+        "type": "object"
+      },
+      "SleepQueryRow": {
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "importId": {
+            "type": "integer"
+          },
+          "sourceKey": {
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "sourceKey", "start", "end", "value", "importId", "updatedAt"],
+        "type": "object"
+      },
+      "SleepRecord": {
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": ["start", "end", "value"],
+        "type": "object"
+      },
+      "SleepResponse": {
+        "properties": {
+          "sleep": {
+            "items": {
+              "$ref": "#/components/schemas/SleepQueryRow"
+            },
+            "type": "array"
+          }
+        },
+        "required": ["sleep"],
+        "type": "object"
+      },
+      "SourceInfo": {
+        "anyOf": [
+          {
+            "required": ["deviceIdentifier"]
+          },
+          {
+            "required": ["deviceName"]
+          }
+        ],
+        "properties": {
+          "app": {
+            "type": "string"
+          },
+          "bundleIdentifier": {
+            "type": "string"
+          },
+          "deviceIdentifier": {
+            "type": "string"
+          },
+          "deviceName": {
+            "type": "string"
+          },
+          "deviceSystemName": {
+            "type": "string"
+          },
+          "deviceSystemVersion": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "SourceSummary": {
+        "properties": {
+          "firstImportedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "importCount": {
+            "type": "integer"
+          },
+          "lastImportedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceInfo"
+          },
+          "sourceKey": {
+            "type": "string"
+          }
+        },
+        "required": ["sourceKey", "source", "importCount", "firstImportedAt", "lastImportedAt"],
+        "type": "object"
+      },
+      "SourcesResponse": {
+        "properties": {
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceSummary"
+            },
+            "type": "array"
+          }
+        },
+        "required": ["sources"],
+        "type": "object"
+      },
+      "WorkoutQueryRow": {
+        "properties": {
+          "activeEnergy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuantityValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "activityType": {
+            "type": "string"
+          },
+          "distance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuantityValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "duration": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuantityValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "end": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "externalId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "type": "integer"
+          },
+          "importId": {
+            "type": "integer"
+          },
+          "sourceKey": {
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "workoutKey": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sourceKey",
+          "workoutKey",
+          "externalId",
+          "activityType",
+          "start",
+          "end",
+          "duration",
+          "activeEnergy",
+          "distance",
+          "importId",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "WorkoutRecord": {
+        "properties": {
+          "activeEnergy": {
+            "$ref": "#/components/schemas/QuantityValue"
+          },
+          "activityType": {
+            "type": "string"
+          },
+          "distance": {
+            "$ref": "#/components/schemas/QuantityValue"
+          },
+          "duration": {
+            "$ref": "#/components/schemas/QuantityValue"
+          },
+          "end": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["activityType", "start", "end"],
+        "type": "object"
+      },
+      "WorkoutsResponse": {
+        "properties": {
+          "workouts": {
+            "items": {
+              "$ref": "#/components/schemas/WorkoutQueryRow"
+            },
+            "type": "array"
+          }
+        },
+        "required": ["workouts"],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Private receiver for Hermes Health Bridge Apple Health exports.",
+    "title": "Hermes Health Receiver API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/apple-health/import": {
+      "post": {
+        "description": "Imports a weekly Apple Health JSON export into SQLite storage.",
+        "operationId": "importAppleHealthExport",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppleHealthImportPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Duplicate or replacement import accepted."
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "New import accepted."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid payload or content type."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid bearer token."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request body too large."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Server-side import failure."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Import Apple Health export",
+        "tags": ["Apple Health"]
+      }
+    },
+    "/apple-health/daily-metrics": {
+      "get": {
+        "description": "Returns normalized daily cumulative metrics.",
+        "operationId": "listDailyMetrics",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sourceKey",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "metric",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 500,
+              "maximum": 5000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyMetricsResponse"
+                }
+              }
+            },
+            "description": "Daily metrics."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid query parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List daily metrics",
+        "tags": ["Apple Health"]
+      }
+    },
+    "/apple-health/imports": {
+      "get": {
+        "description": "Returns import metadata. Raw payloads are not included.",
+        "operationId": "listImports",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sourceKey",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter imports whose range overlaps this start.",
+            "in": "query",
+            "name": "start",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter imports whose range overlaps this end.",
+            "in": "query",
+            "name": "end",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 500,
+              "maximum": 5000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportsResponse"
+                }
+              }
+            },
+            "description": "Import metadata."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid query parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List imports",
+        "tags": ["Apple Health"]
+      }
+    },
+    "/apple-health/imports/{id}/payload": {
+      "get": {
+        "description": "Returns one stored raw Apple Health payload with its import metadata.",
+        "operationId": "getImportPayload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportPayloadResponse"
+                }
+              }
+            },
+            "description": "Import payload."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid bearer token."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Import not found."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get import payload",
+        "tags": ["Apple Health"]
+      }
+    },
+    "/apple-health/samples": {
+      "get": {
+        "description": "Returns normalized sampled metrics such as resting heart rate, HRV, VO2 max, and body mass.",
+        "operationId": "listSamples",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sourceKey",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter samples whose interval overlaps this start.",
+            "in": "query",
+            "name": "start",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter samples whose interval overlaps this end.",
+            "in": "query",
+            "name": "end",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 500,
+              "maximum": 5000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SamplesResponse"
+                }
+              }
+            },
+            "description": "Samples."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid query parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List samples",
+        "tags": ["Apple Health"]
+      }
+    },
+    "/apple-health/sleep": {
+      "get": {
+        "description": "Returns normalized sleep analysis intervals.",
+        "operationId": "listSleep",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sourceKey",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "value",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter sleep intervals whose interval overlaps this start.",
+            "in": "query",
+            "name": "start",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter sleep intervals whose interval overlaps this end.",
+            "in": "query",
+            "name": "end",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 500,
+              "maximum": 5000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SleepResponse"
+                }
+              }
+            },
+            "description": "Sleep intervals."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid query parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List sleep intervals",
+        "tags": ["Apple Health"]
+      }
+    },
+    "/apple-health/sources": {
+      "get": {
+        "description": "Returns source devices represented in imported payloads.",
+        "operationId": "listSources",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourcesResponse"
+                }
+              }
+            },
+            "description": "Sources."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List sources",
+        "tags": ["Apple Health"]
+      }
+    },
+    "/apple-health/workouts": {
+      "get": {
+        "description": "Returns normalized workout intervals.",
+        "operationId": "listWorkouts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sourceKey",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "activityType",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter workouts whose interval overlaps this start.",
+            "in": "query",
+            "name": "start",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter workouts whose interval overlaps this end.",
+            "in": "query",
+            "name": "end",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 500,
+              "maximum": 5000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutsResponse"
+                }
+              }
+            },
+            "description": "Workouts."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid query parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List workouts",
+        "tags": ["Apple Health"]
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "operationId": "getOpenApiDocument",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OpenAPI document."
+          }
+        },
+        "summary": "Get OpenAPI document",
+        "tags": ["Metadata"]
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ]
+}
