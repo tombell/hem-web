@@ -35,11 +35,14 @@ GET /apple-health/imports?sourceKey=<source>&start=<iso-date-time>&end=<iso-date
 GET /apple-health/imports/{id}/payload
 GET /apple-health/daily-metrics?sourceKey=<source>&metric=steps&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&limit=500
 GET /apple-health/samples?sourceKey=<source>&type=restingHeartRate&start=<iso-date-time>&end=<iso-date-time>&limit=500
+GET /apple-health/category-samples?sourceKey=<source>&type=mindfulSession&value=notApplicable&start=<iso-date-time>&end=<iso-date-time>&limit=500
 GET /apple-health/workouts?sourceKey=<source>&activityType=running&start=<iso-date-time>&end=<iso-date-time>&limit=500
 GET /apple-health/sleep?sourceKey=<source>&value=asleepCore&start=<iso-date-time>&end=<iso-date-time>&limit=500
 ```
 
-All `/apple-health/*` endpoints require the same bearer token. Import, sample, workout, and sleep range filters match rows whose intervals overlap the requested `start`/`end`.
+All `/apple-health/*` endpoints require the same bearer token. Import, sample, category sample, workout, and sleep range filters match rows whose intervals overlap the requested `start`/`end`.
+
+The current app sends `categorySamples` for mindfulness and symptoms.
 
 ## Environment
 

@@ -33,6 +33,13 @@ export interface SampleRecord {
   value: number;
 }
 
+export interface CategorySampleRecord {
+  end: string;
+  start: string;
+  type: string;
+  value: string;
+}
+
 export interface WorkoutRecord {
   activeEnergy?: QuantityValue;
   activityType: string;
@@ -50,6 +57,7 @@ export interface SleepRecord {
 }
 
 export interface HealthPayload {
+  categorySamples: CategorySampleRecord[];
   dailyMetrics: DailyMetricRecord[];
   generatedAt: string;
   range: RangeInfo;
@@ -100,6 +108,13 @@ export function validateHealthPayload(input: unknown): ValidationResult {
   const samplesResult = validateOptionalArray(input.samples, "samples", validateSampleRecord);
   if (!samplesResult.ok) return samplesResult;
 
+  const categorySamplesResult = validateOptionalArray(
+    input.categorySamples,
+    "categorySamples",
+    validateCategorySampleRecord,
+  );
+  if (!categorySamplesResult.ok) return categorySamplesResult;
+
   const workoutsResult = validateOptionalArray(input.workouts, "workouts", validateWorkoutRecord);
   if (!workoutsResult.ok) return workoutsResult;
 
@@ -109,6 +124,7 @@ export function validateHealthPayload(input: unknown): ValidationResult {
   return {
     ok: true,
     payload: {
+      categorySamples: categorySamplesResult.value,
       dailyMetrics: dailyMetricsResult.value,
       generatedAt: input.generatedAt,
       range: rangeResult.value,
@@ -246,6 +262,31 @@ function validateSampleRecord(input: unknown, index: number): ValidationResultFo
       start: input.start,
       type: input.type,
       unit: input.unit,
+      value: input.value,
+    },
+  };
+}
+
+function validateCategorySampleRecord(
+  input: unknown,
+  index: number,
+): ValidationResultFor<CategorySampleRecord> {
+  if (!isRecord(input)) {
+    return invalid(`categorySamples[${index}] must be an object`);
+  }
+
+  for (const key of ["type", "start", "end", "value"] as const) {
+    if (!nonEmptyString(input[key])) {
+      return invalid(`categorySamples[${index}].${key} is required`);
+    }
+  }
+
+  return {
+    ok: true,
+    value: {
+      end: input.end,
+      start: input.start,
+      type: input.type,
       value: input.value,
     },
   };

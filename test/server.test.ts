@@ -45,7 +45,7 @@ describe("GET /openapi.json", () => {
     expect(response.headers["content-type"]).toContain("application/json");
 
     const document = response.json<{
-      components: { securitySchemes: Record<string, unknown> };
+      components: { schemas: Record<string, any>; securitySchemes: Record<string, unknown> };
       openapi: string;
       paths: Record<string, any>;
       servers: Array<{ url: string }>;
@@ -53,6 +53,10 @@ describe("GET /openapi.json", () => {
     expect(document.openapi).toBe("3.1.0");
     expect(document.servers).toEqual([{ url: "https://hem.example.test" }]);
     expect(document.paths["/apple-health/import"].post.security).toEqual([{ bearerAuth: [] }]);
+    expect(document.paths["/apple-health/import/test"].get.security).toEqual([{ bearerAuth: [] }]);
+    expect(document.paths["/apple-health/category-samples"].get.security).toEqual([
+      { bearerAuth: [] },
+    ]);
     expect(document.paths["/apple-health/daily-metrics"].get.security).toEqual([
       { bearerAuth: [] },
     ]);
@@ -68,6 +72,13 @@ describe("GET /openapi.json", () => {
       scheme: "bearer",
       type: "http",
     });
+    expect(document.components.schemas.AppleHealthImportPayload.properties.categorySamples).toEqual(
+      {
+        default: [],
+        items: { $ref: "#/components/schemas/CategorySampleRecord" },
+        type: "array",
+      },
+    );
   });
 
   test("rejects non-GET OpenAPI document requests", async () => {
@@ -75,6 +86,27 @@ describe("GET /openapi.json", () => {
 
     expect(response.statusCode).toBe(405);
     expect(response.headers.allow).toBe("GET");
+  });
+});
+
+describe("GET /apple-health/import/test", () => {
+  test("requires bearer auth", async () => {
+    const response = await getPath("/apple-health/import/test", { authorization: undefined });
+
+    expect(response.statusCode).toBe(401);
+  });
+
+  test("returns ok for valid bearer auth", async () => {
+    const response = await getPath("/apple-health/import/test");
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json<{ ok: boolean }>()).toEqual({ ok: true });
+    expect(logs).toMatchObject([
+      {
+        event: "apple_health_import_test",
+      },
+    ]);
+    expect(logs[0].durationMs).toEqual(expect.any(Number));
   });
 });
 
@@ -108,6 +140,7 @@ describe("GET Apple Health query endpoints", () => {
     const payloadResponse = await getPath(`/apple-health/imports/${imports.imports[0].id}/payload`);
     const body = payloadResponse.json<{ payload: HealthPayload }>();
     expect(payloadResponse.statusCode).toBe(200);
+    expect(body.payload.categorySamples).toEqual(payload.categorySamples);
     expect(body.payload.dailyMetrics[0].date).toBe(payload.dailyMetrics[0].date);
     expect(body.payload.source.deviceName).toBe("Test iPhone");
   });
@@ -131,11 +164,14 @@ describe("GET Apple Health query endpoints", () => {
     });
   });
 
-  test("returns filtered samples, workouts, and sleep", async () => {
+  test("returns filtered samples, category samples, workouts, and sleep", async () => {
     await postPayload(validPayload());
 
     const samples = await getJson<{ samples: Array<Record<string, any>> }>(
       "/apple-health/samples?type=restingHeartRate&start=2026-06-15T12:00:00%2B01:00",
+    );
+    const categorySamples = await getJson<{ categorySamples: Array<Record<string, any>> }>(
+      "/apple-health/category-samples?type=mindfulSession&value=notApplicable&start=2026-06-18T07:05:00%2B01:00&end=2026-06-18T07:06:00%2B01:00",
     );
     const workouts = await getJson<{ workouts: Array<Record<string, any>> }>(
       "/apple-health/workouts?activityType=running&start=2026-06-17T07:00:00%2B01:00&end=2026-06-17T09:00:00%2B01:00",
@@ -146,6 +182,11 @@ describe("GET Apple Health query endpoints", () => {
 
     expect(samples.samples).toHaveLength(1);
     expect(samples.samples[0].value).toBe(58);
+    expect(categorySamples.categorySamples).toHaveLength(1);
+    expect(categorySamples.categorySamples[0]).toMatchObject({
+      type: "mindfulSession",
+      value: "notApplicable",
+    });
     expect(workouts.workouts).toHaveLength(1);
     expect(workouts.workouts[0].activityType).toBe("running");
     expect(workouts.workouts[0].distance).toEqual({ unit: "km", value: 5.2 });
@@ -223,10 +264,24 @@ describe("POST /apple-health/import", () => {
     expect(response.statusCode).toBe(201);
     expect(response.json<{ ok: boolean }>()).toEqual({ ok: true });
     expect(countRows("imports")).toBe(1);
+    expect(countRows("category_samples")).toBe(2);
     expect(countRows("daily_metrics")).toBe(4);
     expect(countRows("samples")).toBe(1);
     expect(countRows("workouts")).toBe(1);
     expect(countRows("sleep")).toBe(1);
+    expect(logs[0]).toMatchObject({ counts: { categorySamples: 2 } });
+  });
+
+  test("imports payloads missing categorySamples as an empty array", async () => {
+    const payload: Partial<HealthPayload> = structuredClone(validPayload());
+    delete payload.categorySamples;
+
+    const response = await postRaw(JSON.stringify(payload));
+
+    expect(response.statusCode).toBe(201);
+    expect(countRows("imports")).toBe(1);
+    expect(countRows("category_samples")).toBe(0);
+    expect(logs[0]).toMatchObject({ counts: { categorySamples: 0 } });
   });
 
   test("does not duplicate an exact repeated import", async () => {
@@ -236,6 +291,7 @@ describe("POST /apple-health/import", () => {
     expect((await postPayload(payload)).statusCode).toBe(200);
 
     expect(countRows("imports")).toBe(1);
+    expect(countRows("category_samples")).toBe(2);
     expect(countRows("daily_metrics")).toBe(4);
     expect(countRows("samples")).toBe(1);
     expect(countRows("workouts")).toBe(1);
@@ -245,6 +301,7 @@ describe("POST /apple-health/import", () => {
   test("replaces changed payload for the same import key", async () => {
     const payload = validPayload();
     const changedPayload = structuredClone(payload);
+    changedPayload.categorySamples[0].value = "logged";
     (changedPayload.dailyMetrics[0].steps as QuantityValue).value = 9001;
     changedPayload.samples[0].value = 57;
 
@@ -252,8 +309,10 @@ describe("POST /apple-health/import", () => {
     expect((await postPayload(changedPayload)).statusCode).toBe(200);
 
     expect(countRows("imports")).toBe(1);
+    expect(countRows("category_samples")).toBe(2);
     expect(countRows("daily_metrics")).toBe(4);
     expect(countRows("samples")).toBe(1);
+    expect(categorySampleValues("mindfulSession")).toEqual(["logged"]);
     expect(metricValue("steps")).toBe(9001);
     expect(sampleValue("restingHeartRate")).toBe(57);
   });
@@ -274,6 +333,7 @@ describe("POST /apple-health/import", () => {
     expect((await postPayload(overlappingPayload)).statusCode).toBe(201);
 
     expect(countRows("imports")).toBe(2);
+    expect(countRows("category_samples")).toBe(2);
     expect(countRows("daily_metrics")).toBe(4);
     expect(countRows("samples")).toBe(1);
     expect(countRows("workouts")).toBe(1);
@@ -376,8 +436,31 @@ function sampleValue(type: string): number | undefined {
     .get(type)?.value;
 }
 
+function categorySampleValues(type: string): string[] {
+  return db
+    .prepare<[string], { value: string }>(
+      "SELECT value FROM category_samples WHERE type = ? ORDER BY value ASC",
+    )
+    .all(type)
+    .map((row) => row.value);
+}
+
 function validPayload(overrides: Partial<HealthPayload> = {}): HealthPayload {
   return {
+    categorySamples: [
+      {
+        end: "2026-06-18T07:10:00+01:00",
+        start: "2026-06-18T07:00:00+01:00",
+        type: "mindfulSession",
+        value: "notApplicable",
+      },
+      {
+        end: "2026-06-19T13:15:00+01:00",
+        start: "2026-06-19T13:00:00+01:00",
+        type: "headache",
+        value: "present",
+      },
+    ],
     dailyMetrics: [
       {
         activeEnergy: { unit: "kcal", value: 512.4 },

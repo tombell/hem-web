@@ -63,6 +63,17 @@ interface SampleRow {
   value: number;
 }
 
+interface CategorySampleRow {
+  end: string;
+  id: number;
+  import_id: number;
+  source_key: string;
+  start: string;
+  type: string;
+  updated_at: string;
+  value: string;
+}
+
 interface WorkoutRow {
   active_energy_unit: string | null;
   active_energy_value: number | null;
@@ -116,6 +127,10 @@ export function handleHealthQueryRequest(db: HealthDatabase, url: URL): ApiResul
 
   if (url.pathname === "/apple-health/samples") {
     return listSamples(db, url.searchParams);
+  }
+
+  if (url.pathname === "/apple-health/category-samples") {
+    return listCategorySamples(db, url.searchParams);
   }
 
   if (url.pathname === "/apple-health/workouts") {
@@ -310,6 +325,40 @@ function listSamples(db: HealthDatabase, params: URLSearchParams): ApiResult {
     .all(...built.values, filters.limit);
 
   return successResult({ samples: rows.map(sample) });
+}
+
+function listCategorySamples(db: HealthDatabase, params: URLSearchParams): ApiResult {
+  const filters = parseCommonFilters(params);
+  if (!filters.ok) return filters.result;
+
+  const built = buildIntervalWhereClause(params, {
+    exactFilters: [
+      ["source_key", "sourceKey"],
+      ["type", "type"],
+      ["value", "value"],
+    ],
+  });
+  if (!built.ok) return built.result;
+
+  const rows = db
+    .prepare<SqlParams, CategorySampleRow>(`
+    SELECT
+      id,
+      source_key,
+      type,
+      start,
+      end,
+      value,
+      import_id,
+      updated_at
+    FROM category_samples
+    ${built.sql}
+    ORDER BY start ASC, type ASC, value ASC
+    LIMIT ?
+  `)
+    .all(...built.values, filters.limit);
+
+  return successResult({ categorySamples: rows.map(categorySample) });
 }
 
 function listWorkouts(db: HealthDatabase, params: URLSearchParams): ApiResult {
@@ -557,6 +606,19 @@ function sample(row: SampleRow) {
     start: row.start,
     type: row.type,
     unit: row.unit,
+    updatedAt: row.updated_at,
+    value: row.value,
+  };
+}
+
+function categorySample(row: CategorySampleRow) {
+  return {
+    end: row.end,
+    id: row.id,
+    importId: row.import_id,
+    sourceKey: row.source_key,
+    start: row.start,
+    type: row.type,
     updatedAt: row.updated_at,
     value: row.value,
   };

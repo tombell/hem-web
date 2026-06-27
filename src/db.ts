@@ -78,6 +78,21 @@ function migrateDatabase(db: HealthDatabase): void {
   `);
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS category_samples (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_key TEXT NOT NULL,
+      type TEXT NOT NULL,
+      start TEXT NOT NULL,
+      end TEXT NOT NULL,
+      value TEXT NOT NULL,
+      import_id INTEGER NOT NULL REFERENCES imports(id),
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE (source_key, type, start, end, value)
+    )
+  `);
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS workouts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       source_key TEXT NOT NULL,

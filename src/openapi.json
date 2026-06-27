@@ -3,6 +3,13 @@
     "schemas": {
       "AppleHealthImportPayload": {
         "properties": {
+          "categorySamples": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CategorySampleRecord"
+            },
+            "type": "array"
+          },
           "dailyMetrics": {
             "default": [],
             "items": {
@@ -47,6 +54,71 @@
           }
         },
         "required": ["schemaVersion", "source", "generatedAt", "range"],
+        "type": "object"
+      },
+      "CategorySampleQueryRow": {
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "importId": {
+            "type": "integer"
+          },
+          "sourceKey": {
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "sourceKey", "type", "start", "end", "value", "importId", "updatedAt"],
+        "type": "object"
+      },
+      "CategorySampleRecord": {
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": ["type", "start", "end", "value"],
+        "type": "object"
+      },
+      "CategorySamplesResponse": {
+        "properties": {
+          "categorySamples": {
+            "items": {
+              "$ref": "#/components/schemas/CategorySampleQueryRow"
+            },
+            "type": "array"
+          }
+        },
+        "required": ["categorySamples"],
         "type": "object"
       },
       "DailyMetricRecord": {
@@ -671,6 +743,137 @@
           }
         ],
         "summary": "Import Apple Health export",
+        "tags": ["Apple Health"]
+      }
+    },
+    "/apple-health/import/test": {
+      "get": {
+        "description": "Checks that the Apple Health import API is reachable and the bearer token is valid.",
+        "operationId": "testAppleHealthImportConnection",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Connection test successful."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Test Apple Health import connection",
+        "tags": ["Apple Health"]
+      }
+    },
+    "/apple-health/category-samples": {
+      "get": {
+        "description": "Returns normalized category samples such as mindfulness and symptoms.",
+        "operationId": "listCategorySamples",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sourceKey",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "value",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter category samples whose interval overlaps this start.",
+            "in": "query",
+            "name": "start",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter category samples whose interval overlaps this end.",
+            "in": "query",
+            "name": "end",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 500,
+              "maximum": 5000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategorySamplesResponse"
+                }
+              }
+            },
+            "description": "Category samples."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid query parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List category samples",
         "tags": ["Apple Health"]
       }
     },

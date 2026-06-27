@@ -4,6 +4,7 @@ import type { HealthDatabase } from "./db";
 import { type HealthPayload, type QuantityValue, getSourceKey, isQuantityValue } from "./payload";
 
 export interface ImportCounts {
+  categorySamples: number;
   dailyMetrics: number;
   samples: number;
   sleep: number;
@@ -182,6 +183,7 @@ function replaceImport(
 }
 
 function deleteFactsForImport(db: HealthDatabase, importId: number): void {
+  db.prepare("DELETE FROM category_samples WHERE import_id = ?").run(importId);
   db.prepare("DELETE FROM daily_metrics WHERE import_id = ?").run(importId);
   db.prepare("DELETE FROM samples WHERE import_id = ?").run(importId);
   db.prepare("DELETE FROM workouts WHERE import_id = ?").run(importId);
@@ -197,6 +199,7 @@ function insertNormalizedFacts(
 ): void {
   const statements = prepareStatements(db);
 
+  insertCategorySamples(statements, importId, sourceKey, payload, now);
   insertDailyMetrics(statements, importId, sourceKey, payload, now);
   insertSamples(statements, importId, sourceKey, payload, now);
   insertWorkouts(statements, importId, sourceKey, payload, now);
@@ -239,6 +242,23 @@ function prepareStatements(db: HealthDatabase) {
     ON CONFLICT (source_key, type, start, end, unit)
     DO UPDATE SET
       value = excluded.value,
+      import_id = excluded.import_id,
+      updated_at = excluded.updated_at
+  `),
+
+    upsertCategorySample: db.prepare(`
+    INSERT INTO category_samples (
+      source_key,
+      type,
+      start,
+      end,
+      value,
+      import_id,
+      created_at,
+      updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT (source_key, type, start, end, value)
+    DO UPDATE SET
       import_id = excluded.import_id,
       updated_at = excluded.updated_at
   `),
@@ -293,6 +313,27 @@ function prepareStatements(db: HealthDatabase) {
       updated_at = excluded.updated_at
   `),
   };
+}
+
+function insertCategorySamples(
+  statements: PreparedStatements,
+  importId: number,
+  sourceKey: string,
+  payload: HealthPayload,
+  now: string,
+): void {
+  for (const categorySample of payload.categorySamples) {
+    statements.upsertCategorySample.run(
+      sourceKey,
+      categorySample.type,
+      categorySample.start,
+      categorySample.end,
+      categorySample.value,
+      importId,
+      now,
+      now,
+    );
+  }
 }
 
 function insertDailyMetrics(
@@ -389,6 +430,7 @@ function countPayloadFacts(payload: HealthPayload): ImportCounts {
   }, 0);
 
   return {
+    categorySamples: payload.categorySamples.length,
     dailyMetrics,
     samples: payload.samples.length,
     sleep: payload.sleep.length,

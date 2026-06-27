@@ -104,6 +104,25 @@ export function registerAppleHealthRoutes(
     url: "/apple-health/import",
   });
 
+  server.get("/apple-health/import/test", async (request, reply) => {
+    const startedAt = performance.now();
+
+    if (!isAuthorized(request, config.bearerToken)) {
+      logError(logger, startedAt, "auth");
+      return sendJson(reply, 401, {
+        error: { category: "auth", message: "Unauthorized" },
+        ok: false,
+      });
+    }
+
+    logger.info({
+      durationMs: elapsedMs(startedAt),
+      event: "apple_health_import_test",
+    });
+
+    return sendJson(reply, 200, { ok: true });
+  });
+
   server.get("/apple-health/*", async (request, reply) => {
     const startedAt = performance.now();
 
