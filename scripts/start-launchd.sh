@@ -14,5 +14,5 @@ if [ -f /Users/tombell/Workspace/hem-web/.env ]; then
 fi
 set +a
 
-export PATH="/Users/tombell/.local/share/mise/installs/bun/1.3/bin:/Users/tombell/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-exec /Users/tombell/.local/share/mise/installs/bun/1.3/bin/bun run start
+export PATH="/Users/tombell/.local/share/mise/installs/node/lts/bin:/Users/tombell/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+exec /Users/tombell/.local/share/mise/installs/node/lts/bin/pnpm start

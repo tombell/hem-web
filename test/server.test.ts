@@ -12,6 +12,7 @@ const BASE_CONFIG: AppConfig = {
   host: "127.0.0.1",
   maxBodyBytes: 5_242_880,
   port: 0,
+  publicUrl: "https://hem.example.test",
 };
 
 let db: HealthDatabase;
@@ -47,8 +48,10 @@ describe("GET /openapi.json", () => {
       components: { securitySchemes: Record<string, unknown> };
       openapi: string;
       paths: Record<string, any>;
+      servers: Array<{ url: string }>;
     }>();
     expect(document.openapi).toBe("3.1.0");
+    expect(document.servers).toEqual([{ url: "https://hem.example.test" }]);
     expect(document.paths["/apple-health/import"].post.security).toEqual([{ bearerAuth: [] }]);
     expect(document.paths["/apple-health/daily-metrics"].get.security).toEqual([
       { bearerAuth: [] },

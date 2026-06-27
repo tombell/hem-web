@@ -62,7 +62,7 @@ export function createHealthImportServer({
     });
   });
 
-  registerOpenApiRoutes(server);
+  registerOpenApiRoutes(server, config);
   registerAppleHealthRoutes(server, { config, db, logger });
   registerNotFoundRoute(server);
 

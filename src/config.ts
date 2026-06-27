@@ -9,6 +9,7 @@ export interface AppConfig {
   host: string;
   maxBodyBytes: number;
   port: number;
+  publicUrl: string;
 }
 
 const DEFAULT_DB_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "../data/hem.sqlite");
@@ -32,6 +33,7 @@ export function loadConfig(env: Env = loadEnvFiles()): AppConfig {
       "HERMES_HEALTH_MAX_BODY_BYTES",
     ),
     port: parsePositiveInteger(env.PORT, DEFAULT_PORT, "PORT"),
+    publicUrl: env.HERMES_HEALTH_PUBLIC_URL?.trim() || "/",
   };
 }
 
