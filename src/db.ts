@@ -127,4 +127,34 @@ function migrateDatabase(db: HealthDatabase): void {
       UNIQUE (source_key, start, end, value)
     )
   `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS imports_source_range_idx
+    ON imports (source_key, range_start, range_end, id)
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS daily_metrics_source_metric_date_idx
+    ON daily_metrics (source_key, metric, date)
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS samples_source_type_interval_idx
+    ON samples (source_key, type, start, end)
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS category_samples_source_type_value_interval_idx
+    ON category_samples (source_key, type, value, start, end)
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS workouts_source_activity_interval_idx
+    ON workouts (source_key, activity_type, start, end)
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS sleep_source_value_interval_idx
+    ON sleep (source_key, value, start, end)
+  `);
 }
