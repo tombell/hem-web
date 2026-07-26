@@ -9,9 +9,15 @@ import { registerOpenApiRoutes } from "./routes/openapi-routes";
 import type { MetadataLogger, ParsedJsonBody } from "./routes/shared";
 
 interface ServerDependencies {
+  closeDatabaseOnClose?: boolean;
   config: AppConfig;
   db: HealthDatabase;
   logger?: MetadataLogger;
+}
+
+interface StartServerOptions {
+  openDatabase?: (dbPath: string) => HealthDatabase;
+  registerSignalHandlers?: boolean;
 }
 
 const DEFAULT_LOGGER: MetadataLogger = {
@@ -20,11 +26,18 @@ const DEFAULT_LOGGER: MetadataLogger = {
 };
 
 export function createHealthImportServer({
+  closeDatabaseOnClose = false,
   config,
   db,
   logger = DEFAULT_LOGGER,
 }: ServerDependencies): FastifyInstance {
   const server = Fastify({ bodyLimit: config.maxBodyBytes, logger: false });
+
+  if (closeDatabaseOnClose) {
+    server.addHook("onClose", async () => {
+      if (db.open) db.close();
+    });
+  }
 
   server.addContentTypeParser(
     "application/json",
@@ -69,23 +82,69 @@ export function createHealthImportServer({
   return server;
 }
 
-export async function startServer(config: AppConfig = loadConfig()): Promise<FastifyInstance> {
-  const db = openDatabase(config.dbPath);
-  const server = createHealthImportServer({ config, db });
-  await server.listen({ host: config.host, port: config.port });
-  const address = server.server.address();
-  const port = typeof address === "object" && address !== null ? address.port : config.port;
+export async function startServer(
+  config: AppConfig = loadConfig(),
+  options: StartServerOptions = {},
+): Promise<FastifyInstance> {
+  const db = (options.openDatabase ?? openDatabase)(config.dbPath);
+  let server: FastifyInstance | undefined;
 
-  console.info(
-    JSON.stringify({
-      dbPath: config.dbPath,
-      event: "server_started",
-      host: config.host,
-      port,
-    }),
-  );
+  try {
+    server = createHealthImportServer({ closeDatabaseOnClose: true, config, db });
+    if (options.registerSignalHandlers) registerGracefulShutdown(server);
 
-  return server;
+    await server.listen({ host: config.host, port: config.port });
+    const address = server.server.address();
+    const port = typeof address === "object" && address !== null ? address.port : config.port;
+
+    console.info(
+      JSON.stringify({
+        dbPath: config.dbPath,
+        event: "server_started",
+        host: config.host,
+        port,
+      }),
+    );
+
+    return server;
+  } catch (error) {
+    if (server) await server.close().catch(() => undefined);
+    if (db.open) db.close();
+    throw error;
+  }
+}
+
+function registerGracefulShutdown(server: FastifyInstance): void {
+  let shuttingDown = false;
+
+  const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.info(JSON.stringify({ event: "server_stopping", signal }));
+
+    try {
+      await server.close();
+    } catch (error) {
+      console.error(
+        JSON.stringify({
+          error: error instanceof Error ? error.message : String(error),
+          event: "server_stop_failed",
+          signal,
+        }),
+      );
+      process.exitCode = 1;
+    }
+  };
+
+  const onSigint = (): void => void shutdown("SIGINT");
+  const onSigterm = (): void => void shutdown("SIGTERM");
+
+  process.once("SIGINT", onSigint);
+  process.once("SIGTERM", onSigterm);
+  server.addHook("onClose", async () => {
+    process.removeListener("SIGINT", onSigint);
+    process.removeListener("SIGTERM", onSigterm);
+  });
 }
 
 function hasErrorCode(error: unknown, code: string): error is { code: string } {
@@ -93,5 +152,5 @@ function hasErrorCode(error: unknown, code: string): error is { code: string } {
 }
 
 if (import.meta.main) {
-  await startServer();
+  await startServer(loadConfig(), { registerSignalHandlers: true });
 }

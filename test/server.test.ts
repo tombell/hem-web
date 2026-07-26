@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import type { AppConfig } from "../src/config";
 import { openDatabase, type HealthDatabase } from "../src/db";
 import type { HealthPayload, QuantityValue } from "../src/payload";
-import { createHealthImportServer } from "../src/server";
+import { createHealthImportServer, startServer } from "../src/server";
 
 const BASE_CONFIG: AppConfig = {
   bearerToken: "test-secret",
@@ -32,9 +32,39 @@ beforeEach(() => {
   });
 });
 
-afterEach(() => {
-  void server.close();
-  db.close();
+afterEach(async () => {
+  await server.close();
+  if (db.open) db.close();
+});
+
+describe("server lifecycle", () => {
+  test("closes an owned database when the server closes", async () => {
+    const ownedDatabase = openDatabase(":memory:");
+    const ownedServer = createHealthImportServer({
+      closeDatabaseOnClose: true,
+      config: BASE_CONFIG,
+      db: ownedDatabase,
+    });
+
+    await ownedServer.close();
+
+    expect(ownedDatabase.open).toBe(false);
+  });
+
+  test("closes the database when listening fails", async () => {
+    const ownedDatabase = openDatabase(":memory:");
+
+    await expect(
+      startServer(
+        { ...BASE_CONFIG, port: -1 },
+        {
+          openDatabase: () => ownedDatabase,
+        },
+      ),
+    ).rejects.toThrow();
+
+    expect(ownedDatabase.open).toBe(false);
+  });
 });
 
 describe("GET /openapi.json", () => {
