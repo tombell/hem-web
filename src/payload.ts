@@ -1,3 +1,5 @@
+import { parseIsoDate, parseRfc3339 } from "./date-time";
+
 export interface QuantityValue {
   value: number;
   unit: string;
@@ -121,6 +123,16 @@ export function validateHealthPayload(input: unknown): ValidationResult {
   const sleepResult = validateOptionalArray(input.sleep, "sleep", validateSleepRecord);
   if (!sleepResult.ok) return sleepResult;
 
+  for (const [name, records] of [
+    ["categorySamples", categorySamplesResult.value],
+    ["samples", samplesResult.value],
+    ["workouts", workoutsResult.value],
+    ["sleep", sleepResult.value],
+  ] as const) {
+    const containedResult = validateContainedIntervals(records, name, rangeResult.value);
+    if (!containedResult.ok) return containedResult;
+  }
+
   return {
     ok: true,
     payload: {
@@ -204,6 +216,10 @@ function validateRange(input: unknown): ValidationResultFor<RangeInfo> {
   const endResult = requireIsoDateTime(input.end, "range.end");
   if (!endResult.ok) return endResult;
 
+  if (parseRfc3339(startResult.value)! >= parseRfc3339(endResult.value)!) {
+    return invalid("range.end must be after range.start");
+  }
+
   return {
     ok: true,
     value: {
@@ -227,6 +243,9 @@ function validateDailyMetricRecord(
   if (!nonEmptyString(input.date)) {
     return invalid(`dailyMetrics[${index}].date is required`);
   }
+  if (!parseIsoDate(input.date)) {
+    return invalid(`dailyMetrics[${index}].date must be YYYY-MM-DD`);
+  }
 
   const record: DailyMetricRecord = { date: input.date };
   for (const [metric, value] of Object.entries(input)) {
@@ -245,11 +264,14 @@ function validateSampleRecord(input: unknown, index: number): ValidationResultFo
     return invalid(`samples[${index}] must be an object`);
   }
 
-  for (const key of ["type", "start", "end", "unit"] as const) {
+  for (const key of ["type", "unit"] as const) {
     if (!nonEmptyString(input[key])) {
       return invalid(`samples[${index}].${key} is required`);
     }
   }
+
+  const intervalResult = validateInterval(input, `samples[${index}]`);
+  if (!intervalResult.ok) return intervalResult;
 
   if (typeof input.value !== "number" || !Number.isFinite(input.value)) {
     return invalid(`samples[${index}].value must be a finite number`);
@@ -275,11 +297,14 @@ function validateCategorySampleRecord(
     return invalid(`categorySamples[${index}] must be an object`);
   }
 
-  for (const key of ["type", "start", "end", "value"] as const) {
+  for (const key of ["type", "value"] as const) {
     if (!nonEmptyString(input[key])) {
       return invalid(`categorySamples[${index}].${key} is required`);
     }
   }
+
+  const intervalResult = validateInterval(input, `categorySamples[${index}]`);
+  if (!intervalResult.ok) return intervalResult;
 
   return {
     ok: true,
@@ -297,11 +322,12 @@ function validateWorkoutRecord(input: unknown, index: number): ValidationResultF
     return invalid(`workouts[${index}] must be an object`);
   }
 
-  for (const key of ["activityType", "start", "end"] as const) {
-    if (!nonEmptyString(input[key])) {
-      return invalid(`workouts[${index}].${key} is required`);
-    }
+  if (!nonEmptyString(input.activityType)) {
+    return invalid(`workouts[${index}].activityType is required`);
   }
+
+  const intervalResult = validateInterval(input, `workouts[${index}]`);
+  if (!intervalResult.ok) return intervalResult;
 
   if (input.id !== undefined && !nonEmptyString(input.id)) {
     return invalid(`workouts[${index}].id must be a non-empty string when provided`);
@@ -332,11 +358,12 @@ function validateSleepRecord(input: unknown, index: number): ValidationResultFor
     return invalid(`sleep[${index}] must be an object`);
   }
 
-  for (const key of ["start", "end", "value"] as const) {
-    if (!nonEmptyString(input[key])) {
-      return invalid(`sleep[${index}].${key} is required`);
-    }
+  if (!nonEmptyString(input.value)) {
+    return invalid(`sleep[${index}].value is required`);
   }
+
+  const intervalResult = validateInterval(input, `sleep[${index}]`);
+  if (!intervalResult.ok) return intervalResult;
 
   return {
     ok: true,
@@ -391,11 +418,42 @@ function requireIsoDateTime(input: unknown, path: string): ValidationResultFor<s
     return invalid(`${path} is required`);
   }
 
-  if (Number.isNaN(Date.parse(input))) {
-    return invalid(`${path} must be a valid date/time string`);
+  if (parseRfc3339(input) === undefined) {
+    return invalid(`${path} must be an RFC 3339 timestamp`);
   }
 
   return { ok: true, value: input };
+}
+
+function validateInterval(input: Record<string, any>, path: string): ValidationResultFor<void> {
+  const startResult = requireIsoDateTime(input.start, `${path}.start`);
+  if (!startResult.ok) return startResult;
+
+  const endResult = requireIsoDateTime(input.end, `${path}.end`);
+  if (!endResult.ok) return endResult;
+
+  if (parseRfc3339(startResult.value)! >= parseRfc3339(endResult.value)!) {
+    return invalid(`${path}.end must be after ${path}.start`);
+  }
+
+  return { ok: true, value: undefined };
+}
+
+function validateContainedIntervals(
+  records: Array<{ end: string; start: string }>,
+  name: string,
+  range: RangeInfo,
+): ValidationResultFor<void> {
+  const rangeStart = parseRfc3339(range.start)!;
+  const rangeEnd = parseRfc3339(range.end)!;
+
+  for (const [index, record] of records.entries()) {
+    if (parseRfc3339(record.start)! < rangeStart || parseRfc3339(record.end)! > rangeEnd) {
+      return invalid(`${name}[${index}] must be contained within range`);
+    }
+  }
+
+  return { ok: true, value: undefined };
 }
 
 function isRecord(value: unknown): value is Record<string, any> {

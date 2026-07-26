@@ -224,14 +224,60 @@ describe("GET Apple Health query endpoints", () => {
     expect(sleep.sleep[0].value).toBe("asleepCore");
   });
 
+  test("orders and filters timestamps by instant across UTC offsets", async () => {
+    const payload = validPayload({
+      categorySamples: [],
+      dailyMetrics: [],
+      range: {
+        calendar: "gregorian",
+        end: "2026-06-15T01:00:00Z",
+        kind: "custom",
+        start: "2026-06-14T23:00:00Z",
+        timeZone: "Europe/London",
+      },
+      samples: [
+        {
+          end: "2026-06-15T00:35:00+01:00",
+          start: "2026-06-15T00:30:00+01:00",
+          type: "heartRate",
+          unit: "count/min",
+          value: 60,
+        },
+        {
+          end: "2026-06-14T23:50:00Z",
+          start: "2026-06-14T23:45:00Z",
+          type: "heartRate",
+          unit: "count/min",
+          value: 61,
+        },
+      ],
+      sleep: [],
+      workouts: [],
+    });
+    await postPayload(payload);
+
+    const all = await getJson<{ samples: Array<{ start: string }> }>("/apple-health/samples");
+    const filtered = await getJson<{ samples: Array<{ start: string }> }>(
+      "/apple-health/samples?start=2026-06-14T23:40:00Z",
+    );
+
+    expect(all.samples.map((sample) => sample.start)).toEqual([
+      "2026-06-15T00:30:00+01:00",
+      "2026-06-14T23:45:00Z",
+    ]);
+    expect(filtered.samples.map((sample) => sample.start)).toEqual(["2026-06-14T23:45:00Z"]);
+  });
+
   test("rejects invalid query values", async () => {
     await postPayload(validPayload());
 
     const badLimit = await getPath("/apple-health/samples?limit=0");
-    const badDate = await getPath("/apple-health/daily-metrics?startDate=2026-6-15");
+    const badDate = await getPath("/apple-health/daily-metrics?startDate=2026-02-30");
+    const badDateTime = await getPath("/apple-health/samples?start=2026-06-15");
 
     expect(badLimit.statusCode).toBe(400);
     expect(badDate.statusCode).toBe(400);
+    expect(badDateTime.statusCode).toBe(400);
   });
 
   test("returns 404 for unknown import payload", async () => {
@@ -354,7 +400,7 @@ describe("POST /apple-health/import", () => {
         calendar: "gregorian",
         end: "2026-06-23T00:00:00+01:00",
         kind: "custom",
-        start: "2026-06-16T00:00:00+01:00",
+        start: "2026-06-15T00:00:00+01:00",
         timeZone: "Europe/London",
       },
     });
@@ -377,6 +423,32 @@ describe("POST /apple-health/import", () => {
     const response = await postPayload(payload);
 
     expect(response.statusCode).toBe(400);
+    expect(countRows("imports")).toBe(0);
+  });
+
+  test("rejects invalid dates, unordered ranges, and out-of-range records", async () => {
+    const invalidTimestamp = validPayload();
+    invalidTimestamp.generatedAt = "2026-02-30T00:00:00Z";
+
+    const invalidDate = validPayload();
+    invalidDate.dailyMetrics[0].date = "2026-02-30";
+
+    const unorderedRange = validPayload();
+    unorderedRange.range.end = unorderedRange.range.start;
+
+    const unorderedSample = validPayload();
+    unorderedSample.samples[0].end = unorderedSample.samples[0].start;
+
+    const outOfRangeSample = validPayload();
+    outOfRangeSample.samples[0].start = "2026-06-14T23:00:00+01:00";
+
+    const responses = await Promise.all(
+      [invalidTimestamp, invalidDate, unorderedRange, unorderedSample, outOfRangeSample].map(
+        (payload) => postPayload(payload),
+      ),
+    );
+
+    expect(responses.map((response) => response.statusCode)).toEqual([400, 400, 400, 400, 400]);
     expect(countRows("imports")).toBe(0);
   });
 

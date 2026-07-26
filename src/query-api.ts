@@ -1,3 +1,4 @@
+import { parseIsoDate, parseRfc3339 } from "./date-time";
 import type { HealthDatabase } from "./db";
 
 export interface ApiResult {
@@ -201,7 +202,7 @@ function listImports(db: HealthDatabase, params: URLSearchParams): ApiResult {
       updated_at
     FROM imports
     ${built.sql}
-    ORDER BY range_start DESC, id DESC
+    ORDER BY range_start_ms DESC, id DESC
     LIMIT ?
   `)
     .all(...built.values, filters.limit);
@@ -319,7 +320,7 @@ function listSamples(db: HealthDatabase, params: URLSearchParams): ApiResult {
       updated_at
     FROM samples
     ${built.sql}
-    ORDER BY start ASC, type ASC
+    ORDER BY start_ms ASC, type ASC
     LIMIT ?
   `)
     .all(...built.values, filters.limit);
@@ -353,7 +354,7 @@ function listCategorySamples(db: HealthDatabase, params: URLSearchParams): ApiRe
       updated_at
     FROM category_samples
     ${built.sql}
-    ORDER BY start ASC, type ASC, value ASC
+    ORDER BY start_ms ASC, type ASC, value ASC
     LIMIT ?
   `)
     .all(...built.values, filters.limit);
@@ -393,7 +394,7 @@ function listWorkouts(db: HealthDatabase, params: URLSearchParams): ApiResult {
       updated_at
     FROM workouts
     ${built.sql}
-    ORDER BY start ASC, activity_type ASC
+    ORDER BY start_ms ASC, activity_type ASC
     LIMIT ?
   `)
     .all(...built.values, filters.limit);
@@ -425,7 +426,7 @@ function listSleep(db: HealthDatabase, params: URLSearchParams): ApiResult {
       updated_at
     FROM sleep
     ${built.sql}
-    ORDER BY start ASC, value ASC
+    ORDER BY start_ms ASC, value ASC
     LIMIT ?
   `)
     .all(...built.values, filters.limit);
@@ -470,16 +471,16 @@ function buildImportWhereClause(
   if (start !== null) {
     const result = validateDateTime(start, "start");
     if (!result.ok) return result;
-    clauses.push("range_end > ?");
-    values.push(start);
+    clauses.push("range_end_ms > ?");
+    values.push(result.value);
   }
 
   const end = params.get("end");
   if (end !== null) {
     const result = validateDateTime(end, "end");
     if (!result.ok) return result;
-    clauses.push("range_start < ?");
-    values.push(end);
+    clauses.push("range_start_ms < ?");
+    values.push(result.value);
   }
 
   return { ok: true, sql: `WHERE ${clauses.join(" AND ")}`, values };
@@ -499,16 +500,16 @@ function buildIntervalWhereClause(
   if (start !== null) {
     const result = validateDateTime(start, "start");
     if (!result.ok) return result;
-    clauses.push("end > ?");
-    values.push(start);
+    clauses.push("end_ms > ?");
+    values.push(result.value);
   }
 
   const end = params.get("end");
   if (end !== null) {
     const result = validateDateTime(end, "end");
     if (!result.ok) return result;
-    clauses.push("start < ?");
-    values.push(end);
+    clauses.push("start_ms < ?");
+    values.push(result.value);
   }
 
   return { ok: true, sql: `WHERE ${clauses.join(" AND ")}`, values };
@@ -528,22 +529,23 @@ function addExactFilter(
 function validateDateTime(
   value: string,
   name: string,
-): { ok: true } | { ok: false; result: ApiResult } {
-  if (Number.isNaN(Date.parse(value))) {
+): { ok: true; value: number } | { ok: false; result: ApiResult } {
+  const epochMilliseconds = parseRfc3339(value);
+  if (epochMilliseconds === undefined) {
     return {
       ok: false,
-      result: errorResult(400, "invalid_query", `${name} must be a valid date/time string`),
+      result: errorResult(400, "invalid_query", `${name} must be an RFC 3339 timestamp`),
     };
   }
 
-  return { ok: true };
+  return { ok: true, value: epochMilliseconds };
 }
 
 function validateDate(
   value: string,
   name: string,
 ): { ok: true } | { ok: false; result: ApiResult } {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+  if (!parseIsoDate(value)) {
     return { ok: false, result: errorResult(400, "invalid_query", `${name} must be YYYY-MM-DD`) };
   }
 

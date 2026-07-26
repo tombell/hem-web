@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 
+import { requireEpochMilliseconds } from "./date-time";
 import type { HealthDatabase } from "./db";
 import { type HealthPayload, type QuantityValue, getSourceKey, isQuantityValue } from "./payload";
 
@@ -95,6 +96,8 @@ function createImport(
         schema_version,
         range_start,
         range_end,
+        range_start_ms,
+        range_end_ms,
         range_kind,
         range_calendar,
         range_time_zone,
@@ -108,12 +111,14 @@ function createImport(
         raw_json,
         created_at,
         updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     .run(
       payload.schemaVersion,
       payload.range.start,
       payload.range.end,
+      requireEpochMilliseconds(payload.range.start),
+      requireEpochMilliseconds(payload.range.end),
       payload.range.kind,
       payload.range.calendar,
       payload.range.timeZone,
@@ -233,12 +238,14 @@ function prepareStatements(db: HealthDatabase) {
       type,
       start,
       end,
+      start_ms,
+      end_ms,
       value,
       unit,
       import_id,
       created_at,
       updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT (source_key, type, start, end, unit)
     DO UPDATE SET
       value = excluded.value,
@@ -252,11 +259,13 @@ function prepareStatements(db: HealthDatabase) {
       type,
       start,
       end,
+      start_ms,
+      end_ms,
       value,
       import_id,
       created_at,
       updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT (source_key, type, start, end, value)
     DO UPDATE SET
       import_id = excluded.import_id,
@@ -271,6 +280,8 @@ function prepareStatements(db: HealthDatabase) {
       activity_type,
       start,
       end,
+      start_ms,
+      end_ms,
       duration_value,
       duration_unit,
       active_energy_value,
@@ -280,13 +291,15 @@ function prepareStatements(db: HealthDatabase) {
       import_id,
       created_at,
       updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT (source_key, workout_key)
     DO UPDATE SET
       external_id = excluded.external_id,
       activity_type = excluded.activity_type,
       start = excluded.start,
       end = excluded.end,
+      start_ms = excluded.start_ms,
+      end_ms = excluded.end_ms,
       duration_value = excluded.duration_value,
       duration_unit = excluded.duration_unit,
       active_energy_value = excluded.active_energy_value,
@@ -302,11 +315,13 @@ function prepareStatements(db: HealthDatabase) {
       source_key,
       start,
       end,
+      start_ms,
+      end_ms,
       value,
       import_id,
       created_at,
       updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT (source_key, start, end, value)
     DO UPDATE SET
       import_id = excluded.import_id,
@@ -328,6 +343,8 @@ function insertCategorySamples(
       categorySample.type,
       categorySample.start,
       categorySample.end,
+      requireEpochMilliseconds(categorySample.start),
+      requireEpochMilliseconds(categorySample.end),
       categorySample.value,
       importId,
       now,
@@ -373,6 +390,8 @@ function insertSamples(
       sample.type,
       sample.start,
       sample.end,
+      requireEpochMilliseconds(sample.start),
+      requireEpochMilliseconds(sample.end),
       sample.value,
       sample.unit,
       importId,
@@ -399,6 +418,8 @@ function insertWorkouts(
       workout.activityType,
       workout.start,
       workout.end,
+      requireEpochMilliseconds(workout.start),
+      requireEpochMilliseconds(workout.end),
       quantityValue(workout.duration),
       quantityUnit(workout.duration),
       quantityValue(workout.activeEnergy),
@@ -420,7 +441,17 @@ function insertSleep(
   now: string,
 ): void {
   for (const sleep of payload.sleep) {
-    statements.upsertSleep.run(sourceKey, sleep.start, sleep.end, sleep.value, importId, now, now);
+    statements.upsertSleep.run(
+      sourceKey,
+      sleep.start,
+      sleep.end,
+      requireEpochMilliseconds(sleep.start),
+      requireEpochMilliseconds(sleep.end),
+      sleep.value,
+      importId,
+      now,
+      now,
+    );
   }
 }
 

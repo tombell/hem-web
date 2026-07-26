@@ -3,12 +3,14 @@ import { dirname } from "node:path";
 
 import Database, { type Database as HealthDatabase } from "better-sqlite3";
 
+import { parseRfc3339 } from "./date-time";
+
 export type { HealthDatabase };
 
-export const LATEST_DATABASE_VERSION = 1;
+export const LATEST_DATABASE_VERSION = 2;
 
 interface DatabaseMigration {
-  sql: string;
+  migrate: (db: HealthDatabase) => void;
   version: number;
 }
 
@@ -34,7 +36,11 @@ function configureDatabase(db: HealthDatabase): void {
   db.exec("PRAGMA journal_mode = WAL");
 }
 
-function migrateDatabase(db: HealthDatabase): void {
+export function migrateDatabase(db: HealthDatabase, targetVersion = LATEST_DATABASE_VERSION): void {
+  if (targetVersion < 0 || targetVersion > LATEST_DATABASE_VERSION) {
+    throw new Error(`Unsupported target database version ${targetVersion}`);
+  }
+
   const currentVersion = db.pragma("user_version", { simple: true }) as number;
   if (currentVersion > LATEST_DATABASE_VERSION) {
     throw new Error(
@@ -45,18 +51,19 @@ function migrateDatabase(db: HealthDatabase): void {
   let migratedVersion = currentVersion;
   for (const migration of DATABASE_MIGRATIONS) {
     if (migration.version <= migratedVersion) continue;
+    if (migration.version > targetVersion) break;
     if (migration.version !== migratedVersion + 1) {
       throw new Error(`Missing database migration after version ${migratedVersion}`);
     }
 
     db.transaction(() => {
-      db.exec(migration.sql);
+      migration.migrate(db);
       db.pragma(`user_version = ${migration.version}`);
     })();
     migratedVersion = migration.version;
   }
 
-  if (migratedVersion !== LATEST_DATABASE_VERSION) {
+  if (migratedVersion !== targetVersion) {
     throw new Error(`Missing database migration after version ${migratedVersion}`);
   }
 }
@@ -64,7 +71,8 @@ function migrateDatabase(db: HealthDatabase): void {
 const DATABASE_MIGRATIONS: DatabaseMigration[] = [
   {
     version: 1,
-    sql: `
+    migrate: (db) =>
+      db.exec(`
       CREATE TABLE IF NOT EXISTS imports (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         schema_version INTEGER NOT NULL,
@@ -175,6 +183,75 @@ const DATABASE_MIGRATIONS: DatabaseMigration[] = [
 
       CREATE INDEX IF NOT EXISTS sleep_source_value_interval_idx
       ON sleep (source_key, value, start, end);
-    `,
+    `),
+  },
+  {
+    version: 2,
+    migrate: addNormalizedTimestampColumns,
   },
 ];
+
+function addNormalizedTimestampColumns(db: HealthDatabase): void {
+  db.exec(`
+    ALTER TABLE imports ADD COLUMN range_start_ms INTEGER;
+    ALTER TABLE imports ADD COLUMN range_end_ms INTEGER;
+    ALTER TABLE samples ADD COLUMN start_ms INTEGER;
+    ALTER TABLE samples ADD COLUMN end_ms INTEGER;
+    ALTER TABLE category_samples ADD COLUMN start_ms INTEGER;
+    ALTER TABLE category_samples ADD COLUMN end_ms INTEGER;
+    ALTER TABLE workouts ADD COLUMN start_ms INTEGER;
+    ALTER TABLE workouts ADD COLUMN end_ms INTEGER;
+    ALTER TABLE sleep ADD COLUMN start_ms INTEGER;
+    ALTER TABLE sleep ADD COLUMN end_ms INTEGER;
+  `);
+
+  backfillTimestampColumns(db, "imports", ["range_start", "range_end"]);
+  backfillTimestampColumns(db, "samples", ["start", "end"]);
+  backfillTimestampColumns(db, "category_samples", ["start", "end"]);
+  backfillTimestampColumns(db, "workouts", ["start", "end"]);
+  backfillTimestampColumns(db, "sleep", ["start", "end"]);
+
+  db.exec(`
+    DROP INDEX IF EXISTS imports_source_range_idx;
+    DROP INDEX IF EXISTS samples_source_type_interval_idx;
+    DROP INDEX IF EXISTS category_samples_source_type_value_interval_idx;
+    DROP INDEX IF EXISTS workouts_source_activity_interval_idx;
+    DROP INDEX IF EXISTS sleep_source_value_interval_idx;
+
+    CREATE INDEX imports_source_range_idx
+    ON imports (source_key, range_start_ms, range_end_ms, id);
+
+    CREATE INDEX samples_source_type_interval_idx
+    ON samples (source_key, type, start_ms, end_ms);
+
+    CREATE INDEX category_samples_source_type_value_interval_idx
+    ON category_samples (source_key, type, value, start_ms, end_ms);
+
+    CREATE INDEX workouts_source_activity_interval_idx
+    ON workouts (source_key, activity_type, start_ms, end_ms);
+
+    CREATE INDEX sleep_source_value_interval_idx
+    ON sleep (source_key, value, start_ms, end_ms);
+  `);
+}
+
+function backfillTimestampColumns(db: HealthDatabase, table: string, columns: string[]): void {
+  const rows = db
+    .prepare<[], Record<string, number | string>>(`SELECT id, ${columns.join(", ")} FROM ${table}`)
+    .all();
+  const update = db.prepare(
+    `UPDATE ${table} SET ${columns.map((column) => `${column}_ms = ?`).join(", ")} WHERE id = ?`,
+  );
+
+  for (const row of rows) {
+    const timestamps = columns.map((column) => {
+      const rawValue = row[column];
+      const value = typeof rawValue === "string" ? parseRfc3339(rawValue) : undefined;
+      if (value === undefined) {
+        throw new Error(`Cannot migrate invalid timestamp in ${table}.${column} for row ${row.id}`);
+      }
+      return value;
+    });
+    update.run(...timestamps, row.id);
+  }
+}

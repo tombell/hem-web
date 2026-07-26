@@ -2,9 +2,15 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import Database from "better-sqlite3";
 import { afterEach, describe, expect, test } from "vitest";
 
-import { LATEST_DATABASE_VERSION, openDatabase } from "../src/db";
+import {
+  LATEST_DATABASE_VERSION,
+  migrateDatabase,
+  openDatabase,
+  type HealthDatabase,
+} from "../src/db";
 
 let temporaryDirectory: string | undefined;
 
@@ -29,11 +35,11 @@ describe("database migrations", () => {
     db.close();
   });
 
-  test("preserves data while adopting an unversioned database", () => {
+  test("preserves and normalizes data while adopting an unversioned database", () => {
     const path = temporaryDatabasePath();
-    const legacy = openDatabase(path);
-    legacy.exec("CREATE TABLE migration_sentinel (value TEXT NOT NULL)");
-    legacy.prepare("INSERT INTO migration_sentinel (value) VALUES (?)").run("preserved");
+    const legacy = new Database(path);
+    migrateDatabase(legacy, 1);
+    insertLegacyImport(legacy, "2026-06-15T00:00:00+01:00");
     legacy.pragma("user_version = 0");
     legacy.close();
 
@@ -41,10 +47,32 @@ describe("database migrations", () => {
 
     expect(migrated.pragma("user_version", { simple: true })).toBe(LATEST_DATABASE_VERSION);
     expect(
-      migrated.prepare<[], { value: string }>("SELECT value FROM migration_sentinel").get(),
-    ).toEqual({ value: "preserved" });
+      migrated
+        .prepare<[], { range_start: string; range_start_ms: number }>(
+          "SELECT range_start, range_start_ms FROM imports",
+        )
+        .get(),
+    ).toEqual({
+      range_start: "2026-06-15T00:00:00+01:00",
+      range_start_ms: Date.parse("2026-06-15T00:00:00+01:00"),
+    });
 
     migrated.close();
+  });
+
+  test("rolls back normalization when legacy timestamps are invalid", () => {
+    const legacy = new Database(temporaryDatabasePath());
+    migrateDatabase(legacy, 1);
+    insertLegacyImport(legacy, "not-a-timestamp");
+
+    expect(() => migrateDatabase(legacy)).toThrow(
+      "Cannot migrate invalid timestamp in imports.range_start for row 1",
+    );
+    expect(legacy.pragma("user_version", { simple: true })).toBe(1);
+    const columns = legacy.pragma("table_info(imports)") as Array<{ name: string }>;
+    expect(columns.some((column) => column.name === "range_start_ms")).toBe(false);
+
+    legacy.close();
   });
 
   test("rejects databases created by a newer application version", () => {
@@ -58,6 +86,28 @@ describe("database migrations", () => {
     );
   });
 });
+
+function insertLegacyImport(db: HealthDatabase, rangeStart: string): void {
+  db.prepare(`
+    INSERT INTO imports (
+      schema_version, range_start, range_end, range_kind, range_calendar, range_time_zone,
+      source_key, generated_at, payload_hash, raw_json, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    1,
+    rangeStart,
+    "2026-06-22T00:00:00+01:00",
+    "custom",
+    "gregorian",
+    "Europe/London",
+    "Test iPhone",
+    "2026-06-24T10:15:00+01:00",
+    "hash",
+    "{}",
+    "2026-06-24T09:15:00.000Z",
+    "2026-06-24T09:15:00.000Z",
+  );
+}
 
 function temporaryDatabasePath(): string {
   temporaryDirectory ??= mkdtempSync(join(tmpdir(), "hem-web-db-test-"));
