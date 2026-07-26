@@ -75,7 +75,11 @@ describe("GET /openapi.json", () => {
     expect(response.headers["content-type"]).toContain("application/json");
 
     const document = response.json<{
-      components: { schemas: Record<string, any>; securitySchemes: Record<string, unknown> };
+      components: {
+        parameters: Record<string, any>;
+        schemas: Record<string, any>;
+        securitySchemes: Record<string, unknown>;
+      };
       openapi: string;
       paths: Record<string, any>;
       servers: Array<{ url: string }>;
@@ -114,6 +118,15 @@ describe("GET /openapi.json", () => {
       type: "string",
     });
     expect(document.components.schemas.SampleQueryRow.required).toContain("externalId");
+    expect(document.components.schemas.SamplesResponse.required).toEqual([
+      "samples",
+      "hasMore",
+      "nextCursor",
+    ]);
+    expect(document.components.parameters.Cursor.name).toBe("cursor");
+    expect(document.paths["/apple-health/samples"].get.parameters).toContainEqual({
+      $ref: "#/components/parameters/Cursor",
+    });
   });
 
   test("rejects non-GET OpenAPI document requests", async () => {
@@ -161,6 +174,7 @@ describe("GET Apple Health query endpoints", () => {
     const sourcesResponse = await getPath("/apple-health/sources");
     const sources = sourcesResponse.json<{ sources: Array<Record<string, any>> }>();
     expect(sourcesResponse.statusCode).toBe(200);
+    expect(sources).toMatchObject({ hasMore: false, nextCursor: null });
     expect(sources.sources).toHaveLength(1);
     expect(sources.sources[0].sourceKey).toBe("Test iPhone");
     expect(sources.sources[0].importCount).toBe(1);
@@ -271,6 +285,79 @@ describe("GET Apple Health query endpoints", () => {
       "2026-06-14T23:45:00Z",
     ]);
     expect(filtered.samples.map((sample) => sample.start)).toEqual(["2026-06-14T23:45:00Z"]);
+  });
+
+  test("paginates deterministically without duplicate rows", async () => {
+    const payload = validPayload({
+      categorySamples: [],
+      dailyMetrics: [],
+      samples: Array.from({ length: 5 }, (_, index) => ({
+        end: `2026-06-15T00:00:0${index + 1}+01:00`,
+        id: `sample-${index + 1}`,
+        start: "2026-06-15T00:00:00+01:00",
+        type: "heartRate",
+        unit: "count/min",
+        value: 60 + index,
+      })),
+      sleep: [],
+      workouts: [],
+    });
+    await postPayload(payload);
+
+    const first = await getJson<{
+      hasMore: boolean;
+      nextCursor: string | null;
+      samples: Array<{ externalId: string }>;
+    }>("/apple-health/samples?type=heartRate&limit=2");
+    const second = await getJson<typeof first>(
+      `/apple-health/samples?type=heartRate&limit=2&cursor=${first.nextCursor}`,
+    );
+    const third = await getJson<typeof first>(
+      `/apple-health/samples?type=heartRate&limit=2&cursor=${second.nextCursor}`,
+    );
+
+    expect(first).toMatchObject({ hasMore: true });
+    expect(second).toMatchObject({ hasMore: true });
+    expect(third).toMatchObject({ hasMore: false, nextCursor: null });
+    expect(
+      [...first.samples, ...second.samples, ...third.samples].map((row) => row.externalId),
+    ).toEqual(["sample-1", "sample-2", "sample-3", "sample-4", "sample-5"]);
+  });
+
+  test("paginates imports in descending deterministic order", async () => {
+    const firstPayload = validPayload();
+    const secondPayload = validPayload();
+    secondPayload.range.end = "2026-06-23T00:00:00+01:00";
+    const thirdPayload = validPayload();
+    thirdPayload.range.end = "2026-06-24T00:00:00+01:00";
+
+    expect((await postPayload(firstPayload)).statusCode).toBe(201);
+    expect((await postPayload(secondPayload)).statusCode).toBe(201);
+    expect((await postPayload(thirdPayload)).statusCode).toBe(201);
+
+    const first = await getJson<{
+      hasMore: boolean;
+      imports: Array<{ id: number }>;
+      nextCursor: string | null;
+    }>("/apple-health/imports?limit=2");
+    const second = await getJson<typeof first>(
+      `/apple-health/imports?limit=2&cursor=${first.nextCursor}`,
+    );
+
+    expect(first.hasMore).toBe(true);
+    expect(second).toMatchObject({ hasMore: false, nextCursor: null });
+    expect([...first.imports, ...second.imports].map((row) => row.id)).toEqual([3, 2, 1]);
+  });
+
+  test("rejects malformed and cross-endpoint cursors", async () => {
+    await postPayload(validPayload());
+    const page = await getJson<{ nextCursor: string }>("/apple-health/category-samples?limit=1");
+
+    const malformed = await getPath("/apple-health/samples?cursor=not-a-cursor");
+    const wrongEndpoint = await getPath(`/apple-health/sleep?cursor=${page.nextCursor}`);
+
+    expect(malformed.statusCode).toBe(400);
+    expect(wrongEndpoint.statusCode).toBe(400);
   });
 
   test("rejects invalid query values", async () => {

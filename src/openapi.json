@@ -1,5 +1,25 @@
 {
   "components": {
+    "parameters": {
+      "Cursor": {
+        "description": "Opaque cursor returned by the previous page for this endpoint.",
+        "in": "query",
+        "name": "cursor",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "Limit": {
+        "in": "query",
+        "name": "limit",
+        "schema": {
+          "default": 500,
+          "maximum": 5000,
+          "minimum": 1,
+          "type": "integer"
+        }
+      }
+    },
     "schemas": {
       "AppleHealthImportPayload": {
         "properties": {
@@ -133,9 +153,15 @@
               "$ref": "#/components/schemas/CategorySampleQueryRow"
             },
             "type": "array"
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }]
           }
         },
-        "required": ["categorySamples"],
+        "required": ["categorySamples", "hasMore", "nextCursor"],
         "type": "object"
       },
       "DailyMetricRecord": {
@@ -211,9 +237,15 @@
               "$ref": "#/components/schemas/DailyMetricQueryRow"
             },
             "type": "array"
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }]
           }
         },
-        "required": ["dailyMetrics"],
+        "required": ["dailyMetrics", "hasMore", "nextCursor"],
         "type": "object"
       },
       "ImportRange": {
@@ -299,14 +331,20 @@
       },
       "ImportsResponse": {
         "properties": {
+          "hasMore": {
+            "type": "boolean"
+          },
           "imports": {
             "items": {
               "$ref": "#/components/schemas/ImportMetadata"
             },
             "type": "array"
+          },
+          "nextCursor": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }]
           }
         },
-        "required": ["imports"],
+        "required": ["imports", "hasMore", "nextCursor"],
         "type": "object"
       },
       "OkResponse": {
@@ -409,6 +447,12 @@
       },
       "SamplesResponse": {
         "properties": {
+          "hasMore": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }]
+          },
           "samples": {
             "items": {
               "$ref": "#/components/schemas/SampleQueryRow"
@@ -416,7 +460,7 @@
             "type": "array"
           }
         },
-        "required": ["samples"],
+        "required": ["samples", "hasMore", "nextCursor"],
         "type": "object"
       },
       "SleepQueryRow": {
@@ -484,6 +528,12 @@
       },
       "SleepResponse": {
         "properties": {
+          "hasMore": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }]
+          },
           "sleep": {
             "items": {
               "$ref": "#/components/schemas/SleepQueryRow"
@@ -491,7 +541,7 @@
             "type": "array"
           }
         },
-        "required": ["sleep"],
+        "required": ["sleep", "hasMore", "nextCursor"],
         "type": "object"
       },
       "SourceInfo": {
@@ -550,6 +600,12 @@
       },
       "SourcesResponse": {
         "properties": {
+          "hasMore": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }]
+          },
           "sources": {
             "items": {
               "$ref": "#/components/schemas/SourceSummary"
@@ -557,7 +613,7 @@
             "type": "array"
           }
         },
-        "required": ["sources"],
+        "required": ["sources", "hasMore", "nextCursor"],
         "type": "object"
       },
       "WorkoutQueryRow": {
@@ -678,6 +734,12 @@
       },
       "WorkoutsResponse": {
         "properties": {
+          "hasMore": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }]
+          },
           "workouts": {
             "items": {
               "$ref": "#/components/schemas/WorkoutQueryRow"
@@ -685,7 +747,7 @@
             "type": "array"
           }
         },
-        "required": ["workouts"],
+        "required": ["workouts", "hasMore", "nextCursor"],
         "type": "object"
       }
     },
@@ -829,6 +891,9 @@
         "operationId": "listCategorySamples",
         "parameters": [
           {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
             "in": "query",
             "name": "sourceKey",
             "schema": {
@@ -925,6 +990,9 @@
         "operationId": "listDailyMetrics",
         "parameters": [
           {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
             "in": "query",
             "name": "sourceKey",
             "schema": {
@@ -1011,6 +1079,9 @@
         "description": "Returns import metadata. Raw payloads are not included.",
         "operationId": "listImports",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
           {
             "in": "query",
             "name": "sourceKey",
@@ -1150,6 +1221,9 @@
         "operationId": "listSamples",
         "parameters": [
           {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
             "in": "query",
             "name": "sourceKey",
             "schema": {
@@ -1239,6 +1313,9 @@
         "operationId": "listSleep",
         "parameters": [
           {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
             "in": "query",
             "name": "sourceKey",
             "schema": {
@@ -1326,6 +1403,14 @@
       "get": {
         "description": "Returns source devices represented in imported payloads.",
         "operationId": "listSources",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -1336,6 +1421,16 @@
               }
             },
             "description": "Sources."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid query parameter."
           },
           "401": {
             "content": {
@@ -1362,6 +1457,9 @@
         "description": "Returns normalized workout intervals.",
         "operationId": "listWorkouts",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
           {
             "in": "query",
             "name": "sourceKey",

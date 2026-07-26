@@ -7,7 +7,7 @@ import { parseRfc3339 } from "./date-time";
 
 export type { HealthDatabase };
 
-export const LATEST_DATABASE_VERSION = 3;
+export const LATEST_DATABASE_VERSION = 4;
 
 interface DatabaseMigration {
   migrate: (db: HealthDatabase) => void;
@@ -193,7 +193,33 @@ const DATABASE_MIGRATIONS: DatabaseMigration[] = [
     version: 3,
     migrate: addStableRecordIdentifiers,
   },
+  {
+    version: 4,
+    migrate: addPaginationIndexes,
+  },
 ];
+
+function addPaginationIndexes(db: HealthDatabase): void {
+  db.exec(`
+    CREATE INDEX imports_page_idx
+    ON imports (range_start_ms DESC, id DESC);
+
+    CREATE INDEX daily_metrics_page_idx
+    ON daily_metrics (date, metric, id);
+
+    CREATE INDEX samples_page_idx
+    ON samples (start_ms, type, id);
+
+    CREATE INDEX category_samples_page_idx
+    ON category_samples (start_ms, type, value, id);
+
+    CREATE INDEX workouts_page_idx
+    ON workouts (start_ms, activity_type, id);
+
+    CREATE INDEX sleep_page_idx
+    ON sleep (start_ms, value, id);
+  `);
+}
 
 function addStableRecordIdentifiers(db: HealthDatabase): void {
   db.exec(`

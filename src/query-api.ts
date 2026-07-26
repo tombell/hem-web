@@ -26,6 +26,10 @@ interface ImportMetadataRow {
   updated_at: string;
 }
 
+interface PaginatedImportMetadataRow extends ImportMetadataRow {
+  range_start_ms: number;
+}
+
 interface RawImportRow extends ImportMetadataRow {
   raw_json: string;
 }
@@ -59,6 +63,7 @@ interface SampleRow {
   import_id: number;
   source_key: string;
   start: string;
+  start_ms: number;
   type: string;
   unit: string;
   updated_at: string;
@@ -72,6 +77,7 @@ interface CategorySampleRow {
   import_id: number;
   source_key: string;
   start: string;
+  start_ms: number;
   type: string;
   updated_at: string;
   value: string;
@@ -91,6 +97,7 @@ interface WorkoutRow {
   import_id: number;
   source_key: string;
   start: string;
+  start_ms: number;
   updated_at: string;
   workout_key: string;
 }
@@ -102,6 +109,7 @@ interface SleepRow {
   import_id: number;
   source_key: string;
   start: string;
+  start_ms: number;
   updated_at: string;
   value: string;
 }
@@ -111,9 +119,24 @@ type SqlParams = unknown[];
 const DEFAULT_LIMIT = 500;
 const MAX_LIMIT = 5_000;
 
+type CursorEndpoint =
+  | "category-samples"
+  | "daily-metrics"
+  | "imports"
+  | "samples"
+  | "sleep"
+  | "sources"
+  | "workouts";
+type CursorValue = number | string;
+
+interface ParsedPagination {
+  cursor: CursorValue[] | undefined;
+  limit: number;
+}
+
 export function handleHealthQueryRequest(db: HealthDatabase, url: URL): ApiResult {
   if (url.pathname === "/apple-health/sources") {
-    return listSources(db);
+    return listSources(db, url.searchParams);
   }
 
   if (url.pathname === "/apple-health/imports") {
@@ -148,9 +171,14 @@ export function handleHealthQueryRequest(db: HealthDatabase, url: URL): ApiResul
   return errorResult(404, "not_found", "Not found");
 }
 
-function listSources(db: HealthDatabase): ApiResult {
+function listSources(db: HealthDatabase, params: URLSearchParams): ApiResult {
+  const pagination = parsePagination(params, "sources", ["string"]);
+  if (!pagination.ok) return pagination.result;
+
+  const cursorClause = pagination.value.cursor ? "WHERE source_key > ?" : "";
+  const cursorValues = pagination.value.cursor ?? [];
   const rows = db
-    .prepare<[], SourceRow>(`
+    .prepare<SqlParams, SourceRow>(`
     SELECT
       source_key,
       source_app,
@@ -161,36 +189,45 @@ function listSources(db: HealthDatabase): ApiResult {
       MIN(created_at) AS first_imported_at,
       MAX(updated_at) AS last_imported_at
     FROM imports
+    ${cursorClause}
     GROUP BY source_key
     ORDER BY source_key ASC
+    LIMIT ?
   `)
-    .all();
+    .all(...cursorValues, pagination.value.limit + 1);
 
-  return successResult({
-    sources: rows.map((row) => ({
-      firstImportedAt: row.first_imported_at,
-      importCount: row.import_count,
-      lastImportedAt: row.last_imported_at,
-      source: importSource(row),
-      sourceKey: row.source_key,
-    })),
-  });
+  return paginatedResult(
+    "sources",
+    rows,
+    pagination.value.limit,
+    (row) => [row.source_key],
+    (page) => ({
+      sources: page.map((row) => ({
+        firstImportedAt: row.first_imported_at,
+        importCount: row.import_count,
+        lastImportedAt: row.last_imported_at,
+        source: importSource(row),
+        sourceKey: row.source_key,
+      })),
+    }),
+  );
 }
 
 function listImports(db: HealthDatabase, params: URLSearchParams): ApiResult {
-  const filters = parseCommonFilters(params);
-  if (!filters.ok) return filters.result;
+  const pagination = parsePagination(params, "imports", ["number", "number"]);
+  if (!pagination.ok) return pagination.result;
 
-  const built = buildImportWhereClause(params);
+  const built = buildImportWhereClause(params, pagination.value.cursor);
   if (!built.ok) return built.result;
 
   const rows = db
-    .prepare<SqlParams, ImportMetadataRow>(`
+    .prepare<SqlParams, PaginatedImportMetadataRow>(`
     SELECT
       id,
       schema_version,
       range_start,
       range_end,
+      range_start_ms,
       range_kind,
       range_calendar,
       range_time_zone,
@@ -208,11 +245,15 @@ function listImports(db: HealthDatabase, params: URLSearchParams): ApiResult {
     ORDER BY range_start_ms DESC, id DESC
     LIMIT ?
   `)
-    .all(...built.values, filters.limit);
+    .all(...built.values, pagination.value.limit + 1);
 
-  return successResult({
-    imports: rows.map(importMetadata),
-  });
+  return paginatedResult(
+    "imports",
+    rows,
+    pagination.value.limit,
+    (row) => [row.range_start_ms, row.id],
+    (page) => ({ imports: page.map(importMetadata) }),
+  );
 }
 
 function getImportPayload(db: HealthDatabase, importId: number): ApiResult {
@@ -252,8 +293,8 @@ function getImportPayload(db: HealthDatabase, importId: number): ApiResult {
 }
 
 function listDailyMetrics(db: HealthDatabase, params: URLSearchParams): ApiResult {
-  const filters = parseCommonFilters(params);
-  if (!filters.ok) return filters.result;
+  const pagination = parsePagination(params, "daily-metrics", ["string", "string", "number"]);
+  if (!pagination.ok) return pagination.result;
 
   const clauses = ["1 = 1"];
   const values: unknown[] = [];
@@ -276,6 +317,11 @@ function listDailyMetrics(db: HealthDatabase, params: URLSearchParams): ApiResul
     values.push(endDate);
   }
 
+  if (pagination.value.cursor) {
+    clauses.push("(date, metric, id) > (?, ?, ?)");
+    values.push(...pagination.value.cursor);
+  }
+
   const rows = db
     .prepare<SqlParams, DailyMetricRow>(`
     SELECT
@@ -289,19 +335,27 @@ function listDailyMetrics(db: HealthDatabase, params: URLSearchParams): ApiResul
       updated_at
     FROM daily_metrics
     WHERE ${clauses.join(" AND ")}
-    ORDER BY date ASC, metric ASC
+    ORDER BY date ASC, metric ASC, id ASC
     LIMIT ?
   `)
-    .all(...values, filters.limit);
+    .all(...values, pagination.value.limit + 1);
 
-  return successResult({ dailyMetrics: rows.map(dailyMetric) });
+  return paginatedResult(
+    "daily-metrics",
+    rows,
+    pagination.value.limit,
+    (row) => [row.date, row.metric, row.id],
+    (page) => ({ dailyMetrics: page.map(dailyMetric) }),
+  );
 }
 
 function listSamples(db: HealthDatabase, params: URLSearchParams): ApiResult {
-  const filters = parseCommonFilters(params);
-  if (!filters.ok) return filters.result;
+  const pagination = parsePagination(params, "samples", ["number", "string", "number"]);
+  if (!pagination.ok) return pagination.result;
 
   const built = buildIntervalWhereClause(params, {
+    cursor: pagination.value.cursor,
+    cursorSql: "(start_ms, type, id) > (?, ?, ?)",
     exactFilters: [
       ["source_key", "sourceKey"],
       ["type", "type"],
@@ -317,6 +371,7 @@ function listSamples(db: HealthDatabase, params: URLSearchParams): ApiResult {
       type,
       external_id,
       start,
+      start_ms,
       end,
       value,
       unit,
@@ -324,19 +379,32 @@ function listSamples(db: HealthDatabase, params: URLSearchParams): ApiResult {
       updated_at
     FROM samples
     ${built.sql}
-    ORDER BY start_ms ASC, type ASC
+    ORDER BY start_ms ASC, type ASC, id ASC
     LIMIT ?
   `)
-    .all(...built.values, filters.limit);
+    .all(...built.values, pagination.value.limit + 1);
 
-  return successResult({ samples: rows.map(sample) });
+  return paginatedResult(
+    "samples",
+    rows,
+    pagination.value.limit,
+    (row) => [row.start_ms, row.type, row.id],
+    (page) => ({ samples: page.map(sample) }),
+  );
 }
 
 function listCategorySamples(db: HealthDatabase, params: URLSearchParams): ApiResult {
-  const filters = parseCommonFilters(params);
-  if (!filters.ok) return filters.result;
+  const pagination = parsePagination(params, "category-samples", [
+    "number",
+    "string",
+    "string",
+    "number",
+  ]);
+  if (!pagination.ok) return pagination.result;
 
   const built = buildIntervalWhereClause(params, {
+    cursor: pagination.value.cursor,
+    cursorSql: "(start_ms, type, value, id) > (?, ?, ?, ?)",
     exactFilters: [
       ["source_key", "sourceKey"],
       ["type", "type"],
@@ -353,25 +421,34 @@ function listCategorySamples(db: HealthDatabase, params: URLSearchParams): ApiRe
       type,
       external_id,
       start,
+      start_ms,
       end,
       value,
       import_id,
       updated_at
     FROM category_samples
     ${built.sql}
-    ORDER BY start_ms ASC, type ASC, value ASC
+    ORDER BY start_ms ASC, type ASC, value ASC, id ASC
     LIMIT ?
   `)
-    .all(...built.values, filters.limit);
+    .all(...built.values, pagination.value.limit + 1);
 
-  return successResult({ categorySamples: rows.map(categorySample) });
+  return paginatedResult(
+    "category-samples",
+    rows,
+    pagination.value.limit,
+    (row) => [row.start_ms, row.type, row.value, row.id],
+    (page) => ({ categorySamples: page.map(categorySample) }),
+  );
 }
 
 function listWorkouts(db: HealthDatabase, params: URLSearchParams): ApiResult {
-  const filters = parseCommonFilters(params);
-  if (!filters.ok) return filters.result;
+  const pagination = parsePagination(params, "workouts", ["number", "string", "number"]);
+  if (!pagination.ok) return pagination.result;
 
   const built = buildIntervalWhereClause(params, {
+    cursor: pagination.value.cursor,
+    cursorSql: "(start_ms, activity_type, id) > (?, ?, ?)",
     exactFilters: [
       ["source_key", "sourceKey"],
       ["activity_type", "activityType"],
@@ -388,6 +465,7 @@ function listWorkouts(db: HealthDatabase, params: URLSearchParams): ApiResult {
       external_id,
       activity_type,
       start,
+      start_ms,
       end,
       duration_value,
       duration_unit,
@@ -399,19 +477,27 @@ function listWorkouts(db: HealthDatabase, params: URLSearchParams): ApiResult {
       updated_at
     FROM workouts
     ${built.sql}
-    ORDER BY start_ms ASC, activity_type ASC
+    ORDER BY start_ms ASC, activity_type ASC, id ASC
     LIMIT ?
   `)
-    .all(...built.values, filters.limit);
+    .all(...built.values, pagination.value.limit + 1);
 
-  return successResult({ workouts: rows.map(workout) });
+  return paginatedResult(
+    "workouts",
+    rows,
+    pagination.value.limit,
+    (row) => [row.start_ms, row.activity_type, row.id],
+    (page) => ({ workouts: page.map(workout) }),
+  );
 }
 
 function listSleep(db: HealthDatabase, params: URLSearchParams): ApiResult {
-  const filters = parseCommonFilters(params);
-  if (!filters.ok) return filters.result;
+  const pagination = parsePagination(params, "sleep", ["number", "string", "number"]);
+  if (!pagination.ok) return pagination.result;
 
   const built = buildIntervalWhereClause(params, {
+    cursor: pagination.value.cursor,
+    cursorSql: "(start_ms, value, id) > (?, ?, ?)",
     exactFilters: [
       ["source_key", "sourceKey"],
       ["value", "value"],
@@ -426,48 +512,87 @@ function listSleep(db: HealthDatabase, params: URLSearchParams): ApiResult {
       source_key,
       external_id,
       start,
+      start_ms,
       end,
       value,
       import_id,
       updated_at
     FROM sleep
     ${built.sql}
-    ORDER BY start_ms ASC, value ASC
+    ORDER BY start_ms ASC, value ASC, id ASC
     LIMIT ?
   `)
-    .all(...built.values, filters.limit);
+    .all(...built.values, pagination.value.limit + 1);
 
-  return successResult({ sleep: rows.map(sleep) });
+  return paginatedResult(
+    "sleep",
+    rows,
+    pagination.value.limit,
+    (row) => [row.start_ms, row.value, row.id],
+    (page) => ({ sleep: page.map(sleep) }),
+  );
 }
 
-function parseCommonFilters(
+function parsePagination(
   params: URLSearchParams,
-): { limit: number; ok: true } | { ok: false; result: ApiResult } {
-  const limit = params.get("limit");
-  if (limit === null) {
-    return { limit: DEFAULT_LIMIT, ok: true };
+  endpoint: CursorEndpoint,
+  valueTypes: Array<"number" | "string">,
+): { ok: true; value: ParsedPagination } | { ok: false; result: ApiResult } {
+  const rawLimit = params.get("limit");
+  let limit = DEFAULT_LIMIT;
+  if (rawLimit !== null) {
+    if (!/^\d+$/.test(rawLimit)) {
+      return {
+        ok: false,
+        result: errorResult(400, "invalid_query", "limit must be a positive integer"),
+      };
+    }
+
+    limit = Number(rawLimit);
+    if (limit <= 0 || limit > MAX_LIMIT) {
+      return {
+        ok: false,
+        result: errorResult(400, "invalid_query", `limit must be between 1 and ${MAX_LIMIT}`),
+      };
+    }
   }
 
-  if (!/^\d+$/.test(limit)) {
+  const rawCursor = params.get("cursor");
+  if (rawCursor === null) return { ok: true, value: { cursor: undefined, limit } };
+
+  try {
+    const decoded = JSON.parse(Buffer.from(rawCursor, "base64url").toString("utf8")) as unknown;
+    if (
+      typeof decoded !== "object" ||
+      decoded === null ||
+      !("endpoint" in decoded) ||
+      decoded.endpoint !== endpoint ||
+      !("version" in decoded) ||
+      decoded.version !== 1 ||
+      !("values" in decoded) ||
+      !Array.isArray(decoded.values) ||
+      decoded.values.length !== valueTypes.length ||
+      decoded.values.some(
+        (value, index) =>
+          typeof value !== valueTypes[index] ||
+          (typeof value === "number" && !Number.isFinite(value)),
+      )
+    ) {
+      throw new Error("Invalid cursor");
+    }
+
+    return { ok: true, value: { cursor: decoded.values as CursorValue[], limit } };
+  } catch {
     return {
       ok: false,
-      result: errorResult(400, "invalid_query", "limit must be a positive integer"),
+      result: errorResult(400, "invalid_query", "cursor is invalid for this endpoint"),
     };
   }
-
-  const value = Number(limit);
-  if (value <= 0 || value > MAX_LIMIT) {
-    return {
-      ok: false,
-      result: errorResult(400, "invalid_query", `limit must be between 1 and ${MAX_LIMIT}`),
-    };
-  }
-
-  return { limit: value, ok: true };
 }
 
 function buildImportWhereClause(
   params: URLSearchParams,
+  cursor: CursorValue[] | undefined,
 ): { ok: true; sql: string; values: unknown[] } | { ok: false; result: ApiResult } {
   const clauses = ["1 = 1"];
   const values: unknown[] = [];
@@ -489,12 +614,21 @@ function buildImportWhereClause(
     values.push(result.value);
   }
 
+  if (cursor) {
+    clauses.push("(range_start_ms, id) < (?, ?)");
+    values.push(...cursor);
+  }
+
   return { ok: true, sql: `WHERE ${clauses.join(" AND ")}`, values };
 }
 
 function buildIntervalWhereClause(
   params: URLSearchParams,
-  options: { exactFilters: Array<[column: string, queryParam: string]> },
+  options: {
+    cursor: CursorValue[] | undefined;
+    cursorSql: string;
+    exactFilters: Array<[column: string, queryParam: string]>;
+  },
 ): { ok: true; sql: string; values: unknown[] } | { ok: false; result: ApiResult } {
   const clauses = ["1 = 1"];
   const values: unknown[] = [];
@@ -516,6 +650,11 @@ function buildIntervalWhereClause(
     if (!result.ok) return result;
     clauses.push("start_ms < ?");
     values.push(result.value);
+  }
+
+  if (options.cursor) {
+    clauses.push(options.cursorSql);
+    values.push(...options.cursor);
   }
 
   return { ok: true, sql: `WHERE ${clauses.join(" AND ")}`, values };
@@ -670,6 +809,26 @@ function quantity(
 ): { unit: string; value: number } | null {
   if (value === null || unit === null) return null;
   return { unit, value };
+}
+
+function paginatedResult<Row>(
+  endpoint: CursorEndpoint,
+  rows: Row[],
+  limit: number,
+  cursorValues: (row: Row) => CursorValue[],
+  body: (page: Row[]) => Record<string, unknown>,
+): ApiResult {
+  const page = rows.slice(0, limit);
+  const hasMore = rows.length > limit;
+  const lastRow = page.at(-1);
+  const nextCursor =
+    hasMore && lastRow
+      ? Buffer.from(
+          JSON.stringify({ endpoint, values: cursorValues(lastRow), version: 1 }),
+        ).toString("base64url")
+      : null;
+
+  return successResult({ ...body(page), hasMore, nextCursor });
 }
 
 function successResult(body: Record<string, unknown>): ApiResult {
