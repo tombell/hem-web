@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 
 import type { AppConfig } from "../config";
 import type { HealthDatabase } from "../db";
@@ -30,10 +30,7 @@ export function registerAppleHealthRoutes(
 
     if (!isAuthorized(request, config.bearerToken)) {
       logError(logger, startedAt, "auth");
-      return sendJson(reply, 401, {
-        error: { category: "auth", message: "Unauthorized" },
-        ok: false,
-      });
+      return sendUnauthorized(reply);
     }
 
     if (!isJsonRequest(request)) {
@@ -114,10 +111,7 @@ export function registerAppleHealthRoutes(
 
     if (!isAuthorized(request, config.bearerToken)) {
       logError(logger, startedAt, "auth");
-      return sendJson(reply, 401, {
-        error: { category: "auth", message: "Unauthorized" },
-        ok: false,
-      });
+      return sendUnauthorized(reply);
     }
 
     logger.info({
@@ -133,10 +127,7 @@ export function registerAppleHealthRoutes(
 
     if (!isAuthorized(request, config.bearerToken)) {
       logError(logger, startedAt, "auth");
-      return sendJson(reply, 401, {
-        error: { category: "auth", message: "Unauthorized" },
-        ok: false,
-      });
+      return sendUnauthorized(reply);
     }
 
     const result = handleHealthQueryRequest(db, new URL(request.url, "http://localhost"));
@@ -155,4 +146,16 @@ export function registerAppleHealthRoutes(
     method: ["DELETE", "PATCH", "POST", "PUT"],
     url: "/apple-health/*",
   });
+}
+
+function sendUnauthorized(reply: FastifyReply): FastifyReply {
+  return sendJson(
+    reply,
+    401,
+    {
+      error: { category: "auth", message: "Unauthorized" },
+      ok: false,
+    },
+    { "WWW-Authenticate": 'Bearer realm="hem-web"' },
+  );
 }

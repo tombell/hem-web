@@ -10,12 +10,16 @@ export interface AppConfig {
   maxBodyBytes: number;
   port: number;
   publicUrl: string;
+  rateLimitMax: number;
+  rateLimitWindowMs: number;
 }
 
 const DEFAULT_DB_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "../data/hem.sqlite");
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_MAX_BODY_BYTES = 5_242_880;
 const DEFAULT_PORT = 3000;
+const DEFAULT_RATE_LIMIT_MAX = 300;
+const DEFAULT_RATE_LIMIT_WINDOW_MS = 60_000;
 
 export function loadConfig(env: Env = loadEnvFiles()): AppConfig {
   const bearerToken = env.HERMES_HEALTH_BEARER_TOKEN?.trim();
@@ -34,6 +38,16 @@ export function loadConfig(env: Env = loadEnvFiles()): AppConfig {
     ),
     port: parsePositiveInteger(env.PORT, DEFAULT_PORT, "PORT"),
     publicUrl: env.HERMES_HEALTH_PUBLIC_URL?.trim() || "/",
+    rateLimitMax: parsePositiveInteger(
+      env.HERMES_HEALTH_RATE_LIMIT_MAX,
+      DEFAULT_RATE_LIMIT_MAX,
+      "HERMES_HEALTH_RATE_LIMIT_MAX",
+    ),
+    rateLimitWindowMs: parsePositiveInteger(
+      env.HERMES_HEALTH_RATE_LIMIT_WINDOW_MS,
+      DEFAULT_RATE_LIMIT_WINDOW_MS,
+      "HERMES_HEALTH_RATE_LIMIT_WINDOW_MS",
+    ),
   };
 }
 

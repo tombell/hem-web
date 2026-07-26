@@ -1,3 +1,4 @@
+import rateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance } from "fastify";
 
 import { type AppConfig, loadConfig } from "./config";
@@ -33,6 +34,18 @@ export function createHealthImportServer({
 }: ServerDependencies): FastifyInstance {
   const server = Fastify({ bodyLimit: config.maxBodyBytes, logger: false });
 
+  server.addHook("onRequest", async (request, reply) => {
+    reply.header("X-Content-Type-Options", "nosniff");
+    if (request.url.startsWith("/apple-health/")) {
+      reply.header("Cache-Control", "no-store");
+    }
+  });
+
+  void server.register(rateLimit, {
+    max: config.rateLimitMax,
+    timeWindow: config.rateLimitWindowMs,
+  });
+
   if (closeDatabaseOnClose) {
     server.addHook("onClose", async () => {
       if (db.open) db.close();
@@ -53,6 +66,14 @@ export function createHealthImportServer({
   );
 
   server.setErrorHandler((error, _request, reply) => {
+    if (hasStatusCode(error, 429)) {
+      void reply.code(429).send({
+        error: { category: "rate_limit", message: "Rate limit exceeded" },
+        ok: false,
+      });
+      return;
+    }
+
     if (hasErrorCode(error, "FST_ERR_CTP_BODY_TOO_LARGE")) {
       void reply.code(413).send({
         error: { category: "body_too_large", message: "Request body too large" },
@@ -75,9 +96,11 @@ export function createHealthImportServer({
     });
   });
 
-  registerOpenApiRoutes(server, config);
-  registerAppleHealthRoutes(server, { config, db, logger });
-  registerNotFoundRoute(server);
+  void server.register(async (routes) => {
+    registerOpenApiRoutes(routes, config);
+    registerAppleHealthRoutes(routes, { config, db, logger });
+    registerNotFoundRoute(routes);
+  });
 
   return server;
 }
@@ -149,6 +172,15 @@ function registerGracefulShutdown(server: FastifyInstance): void {
 
 function hasErrorCode(error: unknown, code: string): error is { code: string } {
   return typeof error === "object" && error !== null && "code" in error && error.code === code;
+}
+
+function hasStatusCode(error: unknown, statusCode: number): error is { statusCode: number } {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "statusCode" in error &&
+    error.statusCode === statusCode
+  );
 }
 
 if (import.meta.main) {

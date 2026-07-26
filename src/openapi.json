@@ -20,6 +20,25 @@
         }
       }
     },
+    "responses": {
+      "TooManyRequests": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        },
+        "description": "Rate limit exceeded.",
+        "headers": {
+          "Retry-After": {
+            "schema": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
     "schemas": {
       "AppleHealthImportPayload": {
         "properties": {
@@ -846,6 +865,9 @@
             },
             "description": "New import accepted."
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "400": {
             "content": {
               "application/json": {
@@ -910,6 +932,9 @@
               }
             },
             "description": "Connection test successful."
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           },
           "401": {
             "content": {
@@ -999,6 +1024,9 @@
               }
             },
             "description": "Category samples."
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           },
           "400": {
             "content": {
@@ -1090,6 +1118,9 @@
             },
             "description": "Daily metrics."
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "400": {
             "content": {
               "application/json": {
@@ -1175,6 +1206,9 @@
             },
             "description": "Import metadata."
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "400": {
             "content": {
               "application/json": {
@@ -1230,6 +1264,9 @@
               }
             },
             "description": "Import payload."
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           },
           "401": {
             "content": {
@@ -1323,6 +1360,9 @@
             },
             "description": "Samples."
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "400": {
             "content": {
               "application/json": {
@@ -1415,6 +1455,9 @@
             },
             "description": "Sleep intervals."
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "400": {
             "content": {
               "application/json": {
@@ -1467,6 +1510,9 @@
               }
             },
             "description": "Sources."
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           },
           "400": {
             "content": {
@@ -1560,6 +1606,9 @@
             },
             "description": "Workouts."
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "400": {
             "content": {
               "application/json": {
@@ -1603,6 +1652,9 @@
               }
             },
             "description": "OpenAPI document."
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         },
         "summary": "Get OpenAPI document",

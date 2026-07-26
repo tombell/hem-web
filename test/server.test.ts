@@ -13,6 +13,8 @@ const BASE_CONFIG: AppConfig = {
   maxBodyBytes: 5_242_880,
   port: 0,
   publicUrl: "https://hem.example.test",
+  rateLimitMax: 1_000,
+  rateLimitWindowMs: 60_000,
 };
 
 let db: HealthDatabase;
@@ -73,10 +75,13 @@ describe("GET /openapi.json", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.headers["content-type"]).toContain("application/json");
+    expect(response.headers["x-content-type-options"]).toBe("nosniff");
+    expect(response.headers["cache-control"]).toBeUndefined();
 
     const document = response.json<{
       components: {
         parameters: Record<string, any>;
+        responses: Record<string, any>;
         schemas: Record<string, any>;
         securitySchemes: Record<string, unknown>;
       };
@@ -131,6 +136,10 @@ describe("GET /openapi.json", () => {
     expect(
       document.paths["/apple-health/import"].post.responses[201].content["application/json"].schema,
     ).toEqual({ $ref: "#/components/schemas/ImportResponse" });
+    expect(document.components.responses.TooManyRequests.headers).toHaveProperty("Retry-After");
+    expect(document.paths["/apple-health/import"].post.responses[429]).toEqual({
+      $ref: "#/components/responses/TooManyRequests",
+    });
     expect(document.components.parameters.Cursor.name).toBe("cursor");
     expect(document.paths["/apple-health/samples"].get.parameters).toContainEqual({
       $ref: "#/components/parameters/Cursor",
@@ -150,6 +159,32 @@ describe("GET /apple-health/import/test", () => {
     const response = await getPath("/apple-health/import/test", { authorization: undefined });
 
     expect(response.statusCode).toBe(401);
+    expect(response.headers["cache-control"]).toBe("no-store");
+    expect(response.headers["www-authenticate"]).toBe('Bearer realm="hem-web"');
+  });
+
+  test("rate limits repeated requests by client IP", async () => {
+    await server.close();
+    server = createHealthImportServer({
+      config: { ...BASE_CONFIG, rateLimitMax: 2 },
+      db,
+      logger: {
+        error: (event) => logs.push(event),
+        info: (event) => logs.push(event),
+      },
+    });
+
+    expect((await getPath("/apple-health/import/test")).statusCode).toBe(200);
+    expect((await getPath("/apple-health/import/test")).statusCode).toBe(200);
+    const limited = await getPath("/apple-health/import/test");
+
+    expect(limited.statusCode).toBe(429);
+    expect(limited.headers["cache-control"]).toBe("no-store");
+    expect(limited.headers["retry-after"]).toBeDefined();
+    expect(limited.json()).toEqual({
+      error: { category: "rate_limit", message: "Rate limit exceeded" },
+      ok: false,
+    });
   });
 
   test("returns ok for valid bearer auth", async () => {
