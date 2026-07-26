@@ -123,6 +123,14 @@ describe("GET /openapi.json", () => {
       "hasMore",
       "nextCursor",
     ]);
+    expect(document.components.schemas.ImportResponse.properties.status.enum).toEqual([
+      "created",
+      "duplicate",
+      "replaced",
+    ]);
+    expect(
+      document.paths["/apple-health/import"].post.responses[201].content["application/json"].schema,
+    ).toEqual({ $ref: "#/components/schemas/ImportResponse" });
     expect(document.components.parameters.Cursor.name).toBe("cursor");
     expect(document.paths["/apple-health/samples"].get.parameters).toContainEqual({
       $ref: "#/components/parameters/Cursor",
@@ -474,7 +482,12 @@ describe("POST /apple-health/import", () => {
     const response = await postPayload(validPayload());
 
     expect(response.statusCode).toBe(201);
-    expect(response.json<{ ok: boolean }>()).toEqual({ ok: true });
+    expect(response.json()).toEqual({
+      counts: { categorySamples: 2, dailyMetrics: 4, samples: 1, sleep: 1, workouts: 1 },
+      importId: 1,
+      ok: true,
+      status: "created",
+    });
     expect(countRows("imports")).toBe(1);
     expect(countRows("category_samples")).toBe(2);
     expect(countRows("daily_metrics")).toBe(4);
@@ -491,6 +504,11 @@ describe("POST /apple-health/import", () => {
     const response = await postRaw(JSON.stringify(payload));
 
     expect(response.statusCode).toBe(201);
+    payload.categorySamples = [];
+    const repeatedResponse = await postRaw(JSON.stringify(payload));
+
+    expect(repeatedResponse.statusCode).toBe(200);
+    expect(repeatedResponse.json()).toMatchObject({ importId: 1, status: "duplicate" });
     expect(countRows("imports")).toBe(1);
     expect(countRows("category_samples")).toBe(0);
     expect(logs[0]).toMatchObject({ counts: { categorySamples: 0 } });
@@ -500,14 +518,30 @@ describe("POST /apple-health/import", () => {
     const payload = validPayload();
 
     expect((await postPayload(payload)).statusCode).toBe(201);
-    expect((await postPayload(payload)).statusCode).toBe(200);
+    const repeatedResponse = await postPayload(payload);
 
+    expect(repeatedResponse.statusCode).toBe(200);
+    expect(repeatedResponse.json()).toMatchObject({ importId: 1, status: "duplicate" });
     expect(countRows("imports")).toBe(1);
     expect(countRows("category_samples")).toBe(2);
     expect(countRows("daily_metrics")).toBe(4);
     expect(countRows("samples")).toBe(1);
     expect(countRows("workouts")).toBe(1);
     expect(countRows("sleep")).toBe(1);
+  });
+
+  test("ignores unknown fields when determining semantic duplicates", async () => {
+    const payload = validPayload();
+    expect((await postPayload(payload)).statusCode).toBe(201);
+
+    const repeatedResponse = await postRaw(
+      JSON.stringify({ ...payload, futureSchemaField: "ignored" }),
+    );
+
+    expect(repeatedResponse.statusCode).toBe(200);
+    expect(repeatedResponse.json()).toMatchObject({ importId: 1, status: "duplicate" });
+    const stored = db.prepare<[], { raw_json: string }>("SELECT raw_json FROM imports").get();
+    expect(JSON.parse(stored!.raw_json)).not.toHaveProperty("futureSchemaField");
   });
 
   test("replaces changed payload for the same import key", async () => {
@@ -518,8 +552,10 @@ describe("POST /apple-health/import", () => {
     changedPayload.samples[0].value = 57;
 
     expect((await postPayload(payload)).statusCode).toBe(201);
-    expect((await postPayload(changedPayload)).statusCode).toBe(200);
+    const changedResponse = await postPayload(changedPayload);
 
+    expect(changedResponse.statusCode).toBe(200);
+    expect(changedResponse.json()).toMatchObject({ importId: 1, status: "replaced" });
     expect(countRows("imports")).toBe(1);
     expect(countRows("category_samples")).toBe(2);
     expect(countRows("daily_metrics")).toBe(4);

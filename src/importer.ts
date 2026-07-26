@@ -31,9 +31,8 @@ export function importHealthPayload(
   db: HealthDatabase,
   payload: HealthPayload,
   rawJson: string,
-  hashInput: unknown = payload,
 ): ImportResult {
-  const payloadHash = sha256Hex(stableStringify(hashInput));
+  const payloadHash = sha256Hex(stableStringify(payload));
   const sourceKey = getSourceKey(payload);
   const counts = countPayloadFacts(payload);
 

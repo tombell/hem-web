@@ -67,7 +67,7 @@ export function registerAppleHealthRoutes(
     }
 
     try {
-      const result = importHealthPayload(db, validation.payload, rawBody, parsed);
+      const result = importHealthPayload(db, validation.payload, rawBody);
       const status = result.status === "created" ? 201 : 200;
 
       logger.info({
@@ -81,7 +81,12 @@ export function registerAppleHealthRoutes(
         status: result.status,
       });
 
-      return sendJson(reply, status, { ok: true });
+      return sendJson(reply, status, {
+        counts: result.counts,
+        importId: result.importId,
+        ok: true,
+        status: result.status,
+      });
     } catch {
       logError(logger, startedAt, "server_error");
       return sendJson(reply, 500, {

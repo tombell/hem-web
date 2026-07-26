@@ -271,6 +271,32 @@
         "required": ["start", "end", "calendar", "timeZone", "kind"],
         "type": "object"
       },
+      "ImportCounts": {
+        "properties": {
+          "categorySamples": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "dailyMetrics": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "samples": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "sleep": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "workouts": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": ["categorySamples", "dailyMetrics", "samples", "sleep", "workouts"],
+        "type": "object"
+      },
       "ImportMetadata": {
         "properties": {
           "createdAt": {
@@ -315,6 +341,26 @@
           "createdAt",
           "updatedAt"
         ],
+        "type": "object"
+      },
+      "ImportResponse": {
+        "properties": {
+          "counts": {
+            "$ref": "#/components/schemas/ImportCounts"
+          },
+          "importId": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "ok": {
+            "const": true
+          },
+          "status": {
+            "enum": ["created", "duplicate", "replaced"],
+            "type": "string"
+          }
+        },
+        "required": ["ok", "importId", "status", "counts"],
         "type": "object"
       },
       "ImportPayloadResponse": {
@@ -784,7 +830,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OkResponse"
+                  "$ref": "#/components/schemas/ImportResponse"
                 }
               }
             },
@@ -794,7 +840,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OkResponse"
+                  "$ref": "#/components/schemas/ImportResponse"
                 }
               }
             },
