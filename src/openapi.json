@@ -1639,6 +1639,62 @@
         "tags": ["Apple Health"]
       }
     },
+    "/health": {
+      "get": {
+        "description": "Reports whether the HTTP process is running.",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Service is live."
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "summary": "Liveness check",
+        "tags": ["Operations"]
+      }
+    },
+    "/ready": {
+      "get": {
+        "description": "Reports whether the SQLite database is available.",
+        "operationId": "getReadiness",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Service is ready."
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database is unavailable."
+          }
+        },
+        "summary": "Readiness check",
+        "tags": ["Operations"]
+      }
+    },
     "/openapi.json": {
       "get": {
         "operationId": "getOpenApiDocument",

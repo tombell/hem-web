@@ -5,6 +5,7 @@ import { type AppConfig, loadConfig } from "./config";
 import type { HealthDatabase } from "./db";
 import { openDatabase } from "./db";
 import { registerAppleHealthRoutes } from "./routes/apple-health-routes";
+import { registerHealthRoutes } from "./routes/health-routes";
 import { registerNotFoundRoute } from "./routes/not-found-routes";
 import { registerOpenApiRoutes } from "./routes/openapi-routes";
 import type { MetadataLogger, ParsedJsonBody } from "./routes/shared";
@@ -33,10 +34,13 @@ export function createHealthImportServer({
   logger = DEFAULT_LOGGER,
 }: ServerDependencies): FastifyInstance {
   const server = Fastify({ bodyLimit: config.maxBodyBytes, logger: false });
+  const requestStartedAt = new WeakMap<object, number>();
 
   server.addHook("onRequest", async (request, reply) => {
+    requestStartedAt.set(request, performance.now());
     reply.header("X-Content-Type-Options", "nosniff");
-    if (request.url.startsWith("/apple-health/")) {
+    const path = request.url.split("?", 1)[0];
+    if (path.startsWith("/apple-health/") || path === "/health" || path === "/ready") {
       reply.header("Cache-Control", "no-store");
     }
   });
@@ -65,39 +69,42 @@ export function createHealthImportServer({
     },
   );
 
-  server.setErrorHandler((error, _request, reply) => {
+  server.setErrorHandler((error, request, reply) => {
+    let category = "server_error";
+    let message = "Request failed";
+    let status = 500;
+
     if (hasStatusCode(error, 429)) {
-      void reply.code(429).send({
-        error: { category: "rate_limit", message: "Rate limit exceeded" },
-        ok: false,
-      });
-      return;
+      category = "rate_limit";
+      message = "Rate limit exceeded";
+      status = 429;
+    } else if (hasErrorCode(error, "FST_ERR_CTP_BODY_TOO_LARGE")) {
+      category = "body_too_large";
+      message = "Request body too large";
+      status = 413;
+    } else if (error instanceof SyntaxError) {
+      category = "invalid_payload";
+      message = "Invalid JSON";
+      status = 400;
     }
 
-    if (hasErrorCode(error, "FST_ERR_CTP_BODY_TOO_LARGE")) {
-      void reply.code(413).send({
-        error: { category: "body_too_large", message: "Request body too large" },
-        ok: false,
-      });
-      return;
-    }
-
-    if (error instanceof SyntaxError) {
-      void reply.code(400).send({
-        error: { category: "invalid_payload", message: "Invalid JSON" },
-        ok: false,
-      });
-      return;
-    }
-
-    void reply.code(500).send({
-      error: { category: "server_error", message: "Import failed" },
-      ok: false,
+    logger.error({
+      category,
+      durationMs: elapsedSince(requestStartedAt.get(request)),
+      errorCode: getErrorCode(error),
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      event: "http_request_error",
+      method: request.method,
+      route: request.routeOptions.url,
+      status,
     });
+
+    void reply.code(status).send({ error: { category, message }, ok: false });
   });
 
   void server.register(async (routes) => {
     registerOpenApiRoutes(routes, config);
+    registerHealthRoutes(routes, { db, logger });
     registerAppleHealthRoutes(routes, { config, db, logger });
     registerNotFoundRoute(routes);
   });
@@ -172,6 +179,16 @@ function registerGracefulShutdown(server: FastifyInstance): void {
 
 function hasErrorCode(error: unknown, code: string): error is { code: string } {
   return typeof error === "object" && error !== null && "code" in error && error.code === code;
+}
+
+function elapsedSince(startedAt: number | undefined): number {
+  if (startedAt === undefined) return 0;
+  return Math.round((performance.now() - startedAt) * 100) / 100;
+}
+
+function getErrorCode(error: unknown): string | undefined {
+  if (typeof error !== "object" || error === null || !("code" in error)) return undefined;
+  return typeof error.code === "string" ? error.code : undefined;
 }
 
 function hasStatusCode(error: unknown, statusCode: number): error is { statusCode: number } {

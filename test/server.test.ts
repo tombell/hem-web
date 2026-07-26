@@ -69,6 +69,42 @@ describe("server lifecycle", () => {
   });
 });
 
+describe("operational health endpoints", () => {
+  test("reports liveness and readiness without authentication", async () => {
+    const health = await getPath("/health", { authorization: undefined });
+    const ready = await getPath("/ready", { authorization: undefined });
+
+    expect(health.statusCode).toBe(200);
+    expect(health.json()).toEqual({ ok: true });
+    expect(health.headers["cache-control"]).toBe("no-store");
+    expect(ready.statusCode).toBe(200);
+    expect(ready.json()).toEqual({ ok: true });
+  });
+
+  test("reports unavailable database readiness without exposing details", async () => {
+    db.close();
+
+    const response = await getPath("/ready", { authorization: undefined });
+
+    expect(response.statusCode).toBe(503);
+    expect(response.json()).toEqual({
+      error: { category: "not_ready", message: "Service not ready" },
+      ok: false,
+    });
+    expect(logs).toContainEqual({
+      durationMs: expect.any(Number),
+      event: "service_not_ready",
+    });
+  });
+
+  test("rejects unsupported health endpoint methods", async () => {
+    const response = await server.inject({ method: "POST", url: "/health" });
+
+    expect(response.statusCode).toBe(405);
+    expect(response.headers.allow).toBe("GET");
+  });
+});
+
 describe("GET /openapi.json", () => {
   test("serves an OpenAPI 3.1 document without auth", async () => {
     const response = await getPath("/openapi.json", { authorization: undefined });
@@ -92,6 +128,8 @@ describe("GET /openapi.json", () => {
     expect(document.openapi).toBe("3.1.0");
     expect(document.servers).toEqual([{ url: "https://hem.example.test" }]);
     expect(document.paths["/apple-health/import"].post.security).toEqual([{ bearerAuth: [] }]);
+    expect(document.paths["/health"].get.security).toBeUndefined();
+    expect(document.paths["/ready"].get.responses[503]).toBeDefined();
     expect(document.paths["/apple-health/import/test"].get.security).toEqual([{ bearerAuth: [] }]);
     expect(document.paths["/apple-health/category-samples"].get.security).toEqual([
       { bearerAuth: [] },
@@ -279,6 +317,27 @@ describe("GET Apple Health query endpoints", () => {
       importCount: 2,
       source: { app: "Latest App", deviceIdentifier: "device-1", deviceName: "Latest iPhone" },
     });
+  });
+
+  test("logs query metadata without query parameters or health values", async () => {
+    await postPayload(validPayload());
+    logs = [];
+
+    const response = await getPath(
+      "/apple-health/samples?type=restingHeartRate&start=2026-06-15T00:00:00%2B01:00",
+    );
+
+    expect(response.statusCode).toBe(200);
+    expect(logs).toEqual([
+      {
+        durationMs: expect.any(Number),
+        event: "apple_health_query",
+        method: "GET",
+        path: "/apple-health/samples",
+        status: 200,
+      },
+    ]);
+    expect(JSON.stringify(logs)).not.toContain("restingHeartRate");
   });
 
   test("returns filtered daily metrics", async () => {
@@ -511,6 +570,17 @@ describe("POST /apple-health/import", () => {
 
     expect(response.statusCode).toBe(400);
     expect(countRows("imports")).toBe(0);
+    expect(logs).toContainEqual({
+      category: "invalid_payload",
+      durationMs: expect.any(Number),
+      errorCode: undefined,
+      errorName: "SyntaxError",
+      event: "http_request_error",
+      method: "POST",
+      route: "/apple-health/import",
+      status: 400,
+    });
+    expect(JSON.stringify(logs)).not.toContain("not-json");
   });
 
   test("imports a minimal valid payload", async () => {

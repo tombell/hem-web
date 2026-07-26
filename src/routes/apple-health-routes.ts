@@ -110,7 +110,7 @@ export function registerAppleHealthRoutes(
     const startedAt = performance.now();
 
     if (!isAuthorized(request, config.bearerToken)) {
-      logError(logger, startedAt, "auth");
+      logError(logger, startedAt, "auth", "apple_health_import_test_error");
       return sendUnauthorized(reply);
     }
 
@@ -126,11 +126,19 @@ export function registerAppleHealthRoutes(
     const startedAt = performance.now();
 
     if (!isAuthorized(request, config.bearerToken)) {
-      logError(logger, startedAt, "auth");
+      logError(logger, startedAt, "auth", "apple_health_query_error");
       return sendUnauthorized(reply);
     }
 
-    const result = handleHealthQueryRequest(db, new URL(request.url, "http://localhost"));
+    const url = new URL(request.url, "http://localhost");
+    const result = handleHealthQueryRequest(db, url);
+    logger.info({
+      durationMs: elapsedMs(startedAt),
+      event: "apple_health_query",
+      method: request.method,
+      path: url.pathname,
+      status: result.status,
+    });
     return sendJson(reply, result.status, result.body, result.headers);
   });
 

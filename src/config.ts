@@ -20,6 +20,8 @@ const DEFAULT_MAX_BODY_BYTES = 5_242_880;
 const DEFAULT_PORT = 3000;
 const DEFAULT_RATE_LIMIT_MAX = 300;
 const DEFAULT_RATE_LIMIT_WINDOW_MS = 60_000;
+const MAX_RATE_LIMIT = 100_000;
+const MAX_RATE_LIMIT_WINDOW_MS = 86_400_000;
 
 export function loadConfig(env: Env = loadEnvFiles()): AppConfig {
   const bearerToken = env.HERMES_HEALTH_BEARER_TOKEN?.trim();
@@ -36,17 +38,19 @@ export function loadConfig(env: Env = loadEnvFiles()): AppConfig {
       DEFAULT_MAX_BODY_BYTES,
       "HERMES_HEALTH_MAX_BODY_BYTES",
     ),
-    port: parsePositiveInteger(env.PORT, DEFAULT_PORT, "PORT"),
-    publicUrl: env.HERMES_HEALTH_PUBLIC_URL?.trim() || "/",
+    port: parsePositiveInteger(env.PORT, DEFAULT_PORT, "PORT", 65_535),
+    publicUrl: parsePublicUrl(env.HERMES_HEALTH_PUBLIC_URL),
     rateLimitMax: parsePositiveInteger(
       env.HERMES_HEALTH_RATE_LIMIT_MAX,
       DEFAULT_RATE_LIMIT_MAX,
       "HERMES_HEALTH_RATE_LIMIT_MAX",
+      MAX_RATE_LIMIT,
     ),
     rateLimitWindowMs: parsePositiveInteger(
       env.HERMES_HEALTH_RATE_LIMIT_WINDOW_MS,
       DEFAULT_RATE_LIMIT_WINDOW_MS,
       "HERMES_HEALTH_RATE_LIMIT_WINDOW_MS",
+      MAX_RATE_LIMIT_WINDOW_MS,
     ),
   };
 }
@@ -55,15 +59,43 @@ function parsePositiveInteger(
   rawValue: string | undefined,
   defaultValue: number,
   name: string,
+  maximum = Number.MAX_SAFE_INTEGER,
 ): number {
   if (rawValue === undefined || rawValue.trim() === "") {
     return defaultValue;
   }
 
   const value = Number(rawValue);
-  if (!Number.isInteger(value) || value <= 0) {
-    throw new Error(`${name} must be a positive integer`);
+  if (!Number.isSafeInteger(value) || value <= 0 || value > maximum) {
+    throw new Error(`${name} must be an integer between 1 and ${maximum}`);
   }
 
   return value;
+}
+
+function parsePublicUrl(rawValue: string | undefined): string {
+  const value = rawValue?.trim() || "/";
+  if (value.startsWith("/") && !value.startsWith("//")) {
+    const parsed = new URL(value, "http://localhost");
+    if (!parsed.search && !parsed.hash) return value;
+  } else {
+    try {
+      const parsed = new URL(value);
+      if (
+        (parsed.protocol === "http:" || parsed.protocol === "https:") &&
+        !parsed.username &&
+        !parsed.password &&
+        !parsed.search &&
+        !parsed.hash
+      ) {
+        return value;
+      }
+    } catch {
+      // Use the consistent configuration error below.
+    }
+  }
+
+  throw new Error(
+    "HERMES_HEALTH_PUBLIC_URL must be an HTTP(S) URL or absolute path without credentials, query, or fragment",
+  );
 }

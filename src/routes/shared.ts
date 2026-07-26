@@ -37,11 +37,16 @@ export function sendJson(
   return reply.headers(headers).code(status).send(body);
 }
 
-export function logError(logger: MetadataLogger, startedAt: number, category: string): void {
+export function logError(
+  logger: MetadataLogger,
+  startedAt: number,
+  category: string,
+  event = "apple_health_import_error",
+): void {
   logger.error({
     category,
     durationMs: elapsedMs(startedAt),
-    event: "apple_health_import_error",
+    event,
   });
 }
 
