@@ -62,6 +62,9 @@
             "format": "date-time",
             "type": "string"
           },
+          "externalId": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }]
+          },
           "id": {
             "type": "integer"
           },
@@ -86,13 +89,27 @@
             "type": "string"
           }
         },
-        "required": ["id", "sourceKey", "type", "start", "end", "value", "importId", "updatedAt"],
+        "required": [
+          "id",
+          "externalId",
+          "sourceKey",
+          "type",
+          "start",
+          "end",
+          "value",
+          "importId",
+          "updatedAt"
+        ],
         "type": "object"
       },
       "CategorySampleRecord": {
         "properties": {
           "end": {
             "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "minLength": 1,
             "type": "string"
           },
           "start": {
@@ -319,6 +336,9 @@
             "format": "date-time",
             "type": "string"
           },
+          "externalId": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }]
+          },
           "id": {
             "type": "integer"
           },
@@ -348,6 +368,7 @@
         },
         "required": [
           "id",
+          "externalId",
           "sourceKey",
           "type",
           "start",
@@ -363,6 +384,10 @@
         "properties": {
           "end": {
             "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "minLength": 1,
             "type": "string"
           },
           "start": {
@@ -400,6 +425,9 @@
             "format": "date-time",
             "type": "string"
           },
+          "externalId": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }]
+          },
           "id": {
             "type": "integer"
           },
@@ -421,13 +449,26 @@
             "type": "string"
           }
         },
-        "required": ["id", "sourceKey", "start", "end", "value", "importId", "updatedAt"],
+        "required": [
+          "id",
+          "externalId",
+          "sourceKey",
+          "start",
+          "end",
+          "value",
+          "importId",
+          "updatedAt"
+        ],
         "type": "object"
       },
       "SleepRecord": {
         "properties": {
           "end": {
             "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "minLength": 1,
             "type": "string"
           },
           "start": {
@@ -624,6 +665,7 @@
             "type": "string"
           },
           "id": {
+            "minLength": 1,
             "type": "string"
           },
           "start": {

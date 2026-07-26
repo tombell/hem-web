@@ -109,6 +109,11 @@ describe("GET /openapi.json", () => {
         type: "array",
       },
     );
+    expect(document.components.schemas.SampleRecord.properties.id).toEqual({
+      minLength: 1,
+      type: "string",
+    });
+    expect(document.components.schemas.SampleQueryRow.required).toContain("externalId");
   });
 
   test("rejects non-GET OpenAPI document requests", async () => {
@@ -414,6 +419,54 @@ describe("POST /apple-health/import", () => {
     expect(countRows("samples")).toBe(1);
     expect(countRows("workouts")).toBe(1);
     expect(countRows("sleep")).toBe(1);
+  });
+
+  test("adopts stable IDs and applies revisions across overlapping imports", async () => {
+    const firstPayload = validPayload();
+    const identifiedPayload = structuredClone(firstPayload);
+    identifiedPayload.range.end = "2026-06-23T00:00:00+01:00";
+    identifiedPayload.samples[0].id = " sample-1 ";
+    identifiedPayload.categorySamples[0].id = "category-1";
+    identifiedPayload.sleep[0].id = "sleep-1";
+
+    const revisedPayload = structuredClone(identifiedPayload);
+    revisedPayload.range.end = "2026-06-24T00:00:00+01:00";
+    revisedPayload.samples[0].start = "2026-06-15T01:00:00+01:00";
+    revisedPayload.samples[0].end = "2026-06-16T01:00:00+01:00";
+    revisedPayload.samples[0].value = 57;
+    revisedPayload.categorySamples[0].value = "logged";
+    revisedPayload.sleep[0].value = "asleepDeep";
+    revisedPayload.workouts[0].distance = { unit: "km", value: 5.5 };
+
+    expect((await postPayload(firstPayload)).statusCode).toBe(201);
+    expect((await postPayload(identifiedPayload)).statusCode).toBe(201);
+    expect((await postPayload(revisedPayload)).statusCode).toBe(201);
+
+    expect(countRows("samples")).toBe(1);
+    expect(countRows("category_samples")).toBe(2);
+    expect(countRows("sleep")).toBe(1);
+    expect(countRows("workouts")).toBe(1);
+
+    const samples = await getJson<{ samples: Array<Record<string, any>> }>("/apple-health/samples");
+    const categorySamples = await getJson<{ categorySamples: Array<Record<string, any>> }>(
+      "/apple-health/category-samples?type=mindfulSession",
+    );
+    const sleep = await getJson<{ sleep: Array<Record<string, any>> }>("/apple-health/sleep");
+
+    expect(samples.samples[0]).toMatchObject({ externalId: "sample-1", value: 57 });
+    expect(categorySamples.categorySamples[0]).toMatchObject({
+      externalId: "category-1",
+      value: "logged",
+    });
+    expect(sleep.sleep[0]).toMatchObject({ externalId: "sleep-1", value: "asleepDeep" });
+  });
+
+  test("rejects blank stable IDs", async () => {
+    const payload = validPayload();
+    payload.samples[0].id = "   ";
+
+    expect((await postPayload(payload)).statusCode).toBe(400);
+    expect(countRows("imports")).toBe(0);
   });
 
   test("rejects payloads without source identity", async () => {

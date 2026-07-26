@@ -54,6 +54,7 @@ interface DailyMetricRow {
 
 interface SampleRow {
   end: string;
+  external_id: string | null;
   id: number;
   import_id: number;
   source_key: string;
@@ -66,6 +67,7 @@ interface SampleRow {
 
 interface CategorySampleRow {
   end: string;
+  external_id: string | null;
   id: number;
   import_id: number;
   source_key: string;
@@ -95,6 +97,7 @@ interface WorkoutRow {
 
 interface SleepRow {
   end: string;
+  external_id: string | null;
   id: number;
   import_id: number;
   source_key: string;
@@ -312,6 +315,7 @@ function listSamples(db: HealthDatabase, params: URLSearchParams): ApiResult {
       id,
       source_key,
       type,
+      external_id,
       start,
       end,
       value,
@@ -347,6 +351,7 @@ function listCategorySamples(db: HealthDatabase, params: URLSearchParams): ApiRe
       id,
       source_key,
       type,
+      external_id,
       start,
       end,
       value,
@@ -419,6 +424,7 @@ function listSleep(db: HealthDatabase, params: URLSearchParams): ApiResult {
     SELECT
       id,
       source_key,
+      external_id,
       start,
       end,
       value,
@@ -602,6 +608,7 @@ function dailyMetric(row: DailyMetricRow) {
 function sample(row: SampleRow) {
   return {
     end: row.end,
+    externalId: row.external_id,
     id: row.id,
     importId: row.import_id,
     sourceKey: row.source_key,
@@ -616,6 +623,7 @@ function sample(row: SampleRow) {
 function categorySample(row: CategorySampleRow) {
   return {
     end: row.end,
+    externalId: row.external_id,
     id: row.id,
     importId: row.import_id,
     sourceKey: row.source_key,
@@ -646,6 +654,7 @@ function workout(row: WorkoutRow) {
 function sleep(row: SleepRow) {
   return {
     end: row.end,
+    externalId: row.external_id,
     id: row.id,
     importId: row.import_id,
     sourceKey: row.source_key,

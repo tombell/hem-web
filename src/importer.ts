@@ -236,6 +236,7 @@ function prepareStatements(db: HealthDatabase) {
     INSERT INTO samples (
       source_key,
       type,
+      external_id,
       start,
       end,
       start_ms,
@@ -245,9 +246,21 @@ function prepareStatements(db: HealthDatabase) {
       import_id,
       created_at,
       updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT (source_key, external_id) WHERE external_id IS NOT NULL
+    DO UPDATE SET
+      type = excluded.type,
+      start = excluded.start,
+      end = excluded.end,
+      start_ms = excluded.start_ms,
+      end_ms = excluded.end_ms,
+      value = excluded.value,
+      unit = excluded.unit,
+      import_id = excluded.import_id,
+      updated_at = excluded.updated_at
     ON CONFLICT (source_key, type, start, end, unit)
     DO UPDATE SET
+      external_id = COALESCE(excluded.external_id, samples.external_id),
       value = excluded.value,
       import_id = excluded.import_id,
       updated_at = excluded.updated_at
@@ -257,6 +270,7 @@ function prepareStatements(db: HealthDatabase) {
     INSERT INTO category_samples (
       source_key,
       type,
+      external_id,
       start,
       end,
       start_ms,
@@ -265,9 +279,20 @@ function prepareStatements(db: HealthDatabase) {
       import_id,
       created_at,
       updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT (source_key, external_id) WHERE external_id IS NOT NULL
+    DO UPDATE SET
+      type = excluded.type,
+      start = excluded.start,
+      end = excluded.end,
+      start_ms = excluded.start_ms,
+      end_ms = excluded.end_ms,
+      value = excluded.value,
+      import_id = excluded.import_id,
+      updated_at = excluded.updated_at
     ON CONFLICT (source_key, type, start, end, value)
     DO UPDATE SET
+      external_id = COALESCE(excluded.external_id, category_samples.external_id),
       import_id = excluded.import_id,
       updated_at = excluded.updated_at
   `),
@@ -313,6 +338,7 @@ function prepareStatements(db: HealthDatabase) {
     upsertSleep: db.prepare(`
     INSERT INTO sleep (
       source_key,
+      external_id,
       start,
       end,
       start_ms,
@@ -321,9 +347,19 @@ function prepareStatements(db: HealthDatabase) {
       import_id,
       created_at,
       updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT (source_key, external_id) WHERE external_id IS NOT NULL
+    DO UPDATE SET
+      start = excluded.start,
+      end = excluded.end,
+      start_ms = excluded.start_ms,
+      end_ms = excluded.end_ms,
+      value = excluded.value,
+      import_id = excluded.import_id,
+      updated_at = excluded.updated_at
     ON CONFLICT (source_key, start, end, value)
     DO UPDATE SET
+      external_id = COALESCE(excluded.external_id, sleep.external_id),
       import_id = excluded.import_id,
       updated_at = excluded.updated_at
   `),
@@ -341,6 +377,7 @@ function insertCategorySamples(
     statements.upsertCategorySample.run(
       sourceKey,
       categorySample.type,
+      categorySample.id ?? null,
       categorySample.start,
       categorySample.end,
       requireEpochMilliseconds(categorySample.start),
@@ -388,6 +425,7 @@ function insertSamples(
     statements.upsertSample.run(
       sourceKey,
       sample.type,
+      sample.id ?? null,
       sample.start,
       sample.end,
       requireEpochMilliseconds(sample.start),
@@ -443,6 +481,7 @@ function insertSleep(
   for (const sleep of payload.sleep) {
     statements.upsertSleep.run(
       sourceKey,
+      sleep.id ?? null,
       sleep.start,
       sleep.end,
       requireEpochMilliseconds(sleep.start),

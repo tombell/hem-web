@@ -29,6 +29,7 @@ export interface DailyMetricRecord {
 
 export interface SampleRecord {
   end: string;
+  id?: string;
   start: string;
   type: string;
   unit: string;
@@ -37,6 +38,7 @@ export interface SampleRecord {
 
 export interface CategorySampleRecord {
   end: string;
+  id?: string;
   start: string;
   type: string;
   value: string;
@@ -54,6 +56,7 @@ export interface WorkoutRecord {
 
 export interface SleepRecord {
   end: string;
+  id?: string;
   start: string;
   value: string;
 }
@@ -273,6 +276,9 @@ function validateSampleRecord(input: unknown, index: number): ValidationResultFo
   const intervalResult = validateInterval(input, `samples[${index}]`);
   if (!intervalResult.ok) return intervalResult;
 
+  const idResult = validateOptionalId(input.id, `samples[${index}].id`);
+  if (!idResult.ok) return idResult;
+
   if (typeof input.value !== "number" || !Number.isFinite(input.value)) {
     return invalid(`samples[${index}].value must be a finite number`);
   }
@@ -281,6 +287,7 @@ function validateSampleRecord(input: unknown, index: number): ValidationResultFo
     ok: true,
     value: {
       end: input.end,
+      id: idResult.value,
       start: input.start,
       type: input.type,
       unit: input.unit,
@@ -306,10 +313,14 @@ function validateCategorySampleRecord(
   const intervalResult = validateInterval(input, `categorySamples[${index}]`);
   if (!intervalResult.ok) return intervalResult;
 
+  const idResult = validateOptionalId(input.id, `categorySamples[${index}].id`);
+  if (!idResult.ok) return idResult;
+
   return {
     ok: true,
     value: {
       end: input.end,
+      id: idResult.value,
       start: input.start,
       type: input.type,
       value: input.value,
@@ -329,9 +340,8 @@ function validateWorkoutRecord(input: unknown, index: number): ValidationResultF
   const intervalResult = validateInterval(input, `workouts[${index}]`);
   if (!intervalResult.ok) return intervalResult;
 
-  if (input.id !== undefined && !nonEmptyString(input.id)) {
-    return invalid(`workouts[${index}].id must be a non-empty string when provided`);
-  }
+  const idResult = validateOptionalId(input.id, `workouts[${index}].id`);
+  if (!idResult.ok) return idResult;
 
   for (const key of ["duration", "activeEnergy", "distance"] as const) {
     if (input[key] !== undefined && !isQuantityValue(input[key])) {
@@ -347,7 +357,7 @@ function validateWorkoutRecord(input: unknown, index: number): ValidationResultF
       distance: input.distance,
       duration: input.duration,
       end: input.end,
-      id: input.id,
+      id: idResult.value,
       start: input.start,
     },
   };
@@ -365,10 +375,14 @@ function validateSleepRecord(input: unknown, index: number): ValidationResultFor
   const intervalResult = validateInterval(input, `sleep[${index}]`);
   if (!intervalResult.ok) return intervalResult;
 
+  const idResult = validateOptionalId(input.id, `sleep[${index}].id`);
+  if (!idResult.ok) return idResult;
+
   return {
     ok: true,
     value: {
       end: input.end,
+      id: idResult.value,
       start: input.start,
       value: input.value,
     },
@@ -396,6 +410,14 @@ function validateOptionalArray<T>(
   }
 
   return { ok: true, value };
+}
+
+function validateOptionalId(input: unknown, path: string): ValidationResultFor<string | undefined> {
+  if (input === undefined) return { ok: true, value: undefined };
+  if (!nonEmptyString(input)) {
+    return invalid(`${path} must be a non-empty string when provided`);
+  }
+  return { ok: true, value: input.trim() };
 }
 
 function validateOptionalStrings(

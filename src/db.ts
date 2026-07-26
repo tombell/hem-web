@@ -7,7 +7,7 @@ import { parseRfc3339 } from "./date-time";
 
 export type { HealthDatabase };
 
-export const LATEST_DATABASE_VERSION = 2;
+export const LATEST_DATABASE_VERSION = 3;
 
 interface DatabaseMigration {
   migrate: (db: HealthDatabase) => void;
@@ -189,7 +189,31 @@ const DATABASE_MIGRATIONS: DatabaseMigration[] = [
     version: 2,
     migrate: addNormalizedTimestampColumns,
   },
+  {
+    version: 3,
+    migrate: addStableRecordIdentifiers,
+  },
 ];
+
+function addStableRecordIdentifiers(db: HealthDatabase): void {
+  db.exec(`
+    ALTER TABLE samples ADD COLUMN external_id TEXT;
+    ALTER TABLE category_samples ADD COLUMN external_id TEXT;
+    ALTER TABLE sleep ADD COLUMN external_id TEXT;
+
+    CREATE UNIQUE INDEX samples_source_external_id_idx
+    ON samples (source_key, external_id)
+    WHERE external_id IS NOT NULL;
+
+    CREATE UNIQUE INDEX category_samples_source_external_id_idx
+    ON category_samples (source_key, external_id)
+    WHERE external_id IS NOT NULL;
+
+    CREATE UNIQUE INDEX sleep_source_external_id_idx
+    ON sleep (source_key, external_id)
+    WHERE external_id IS NOT NULL;
+  `);
+}
 
 function addNormalizedTimestampColumns(db: HealthDatabase): void {
   db.exec(`
