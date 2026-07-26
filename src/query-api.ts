@@ -179,19 +179,34 @@ function listSources(db: HealthDatabase, params: URLSearchParams): ApiResult {
   const cursorValues = pagination.value.cursor ?? [];
   const rows = db
     .prepare<SqlParams, SourceRow>(`
+    WITH source_stats AS (
+      SELECT
+        source_key,
+        COUNT(*) AS import_count,
+        MIN(created_at) AS first_imported_at,
+        MAX(updated_at) AS last_imported_at
+      FROM imports
+      ${cursorClause}
+      GROUP BY source_key
+    )
     SELECT
-      source_key,
-      source_app,
-      source_bundle_identifier,
-      source_device_identifier,
-      source_device_name,
-      COUNT(*) AS import_count,
-      MIN(created_at) AS first_imported_at,
-      MAX(updated_at) AS last_imported_at
-    FROM imports
-    ${cursorClause}
-    GROUP BY source_key
-    ORDER BY source_key ASC
+      source_stats.source_key,
+      latest.source_app,
+      latest.source_bundle_identifier,
+      latest.source_device_identifier,
+      latest.source_device_name,
+      source_stats.import_count,
+      source_stats.first_imported_at,
+      source_stats.last_imported_at
+    FROM source_stats
+    JOIN imports AS latest ON latest.id = (
+      SELECT candidate.id
+      FROM imports AS candidate
+      WHERE candidate.source_key = source_stats.source_key
+      ORDER BY candidate.updated_at DESC, candidate.id DESC
+      LIMIT 1
+    )
+    ORDER BY source_stats.source_key ASC
     LIMIT ?
   `)
     .all(...cursorValues, pagination.value.limit + 1);

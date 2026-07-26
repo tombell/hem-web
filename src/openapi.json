@@ -1401,7 +1401,7 @@
     },
     "/apple-health/sources": {
       "get": {
-        "description": "Returns source devices represented in imported payloads.",
+        "description": "Returns source devices represented in imported payloads. Metadata comes from each source's most recently updated import.",
         "operationId": "listSources",
         "parameters": [
           {

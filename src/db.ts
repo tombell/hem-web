@@ -7,7 +7,7 @@ import { parseRfc3339 } from "./date-time";
 
 export type { HealthDatabase };
 
-export const LATEST_DATABASE_VERSION = 4;
+export const LATEST_DATABASE_VERSION = 5;
 
 interface DatabaseMigration {
   migrate: (db: HealthDatabase) => void;
@@ -197,7 +197,18 @@ const DATABASE_MIGRATIONS: DatabaseMigration[] = [
     version: 4,
     migrate: addPaginationIndexes,
   },
+  {
+    version: 5,
+    migrate: addLatestSourceIndex,
+  },
 ];
+
+function addLatestSourceIndex(db: HealthDatabase): void {
+  db.exec(`
+    CREATE INDEX imports_source_updated_idx
+    ON imports (source_key, updated_at DESC, id DESC);
+  `);
+}
 
 function addPaginationIndexes(db: HealthDatabase): void {
   db.exec(`

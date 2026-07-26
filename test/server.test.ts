@@ -194,6 +194,50 @@ describe("GET Apple Health query endpoints", () => {
     expect(body.payload.source.deviceName).toBe("Test iPhone");
   });
 
+  test("uses metadata from the most recently updated source import", async () => {
+    const firstPayload = validPayload();
+    firstPayload.source = {
+      ...firstPayload.source,
+      app: "Old App",
+      deviceIdentifier: "device-1",
+      deviceName: "Old iPhone",
+    };
+
+    const secondPayload = structuredClone(firstPayload);
+    secondPayload.range.end = "2026-06-23T00:00:00+01:00";
+    secondPayload.source.app = "New App";
+    secondPayload.source.deviceName = "New iPhone";
+
+    expect((await postPayload(firstPayload)).statusCode).toBe(201);
+    expect((await postPayload(secondPayload)).statusCode).toBe(201);
+
+    const newestImport = await getJson<{ sources: Array<Record<string, any>> }>(
+      "/apple-health/sources",
+    );
+    expect(newestImport.sources[0]).toMatchObject({
+      importCount: 2,
+      source: { app: "New App", deviceIdentifier: "device-1", deviceName: "New iPhone" },
+      sourceKey: "device-1",
+    });
+
+    const replacedPayload = structuredClone(firstPayload);
+    replacedPayload.source.app = "Latest App";
+    replacedPayload.source.deviceName = "Latest iPhone";
+    expect((await postPayload(replacedPayload)).statusCode).toBe(200);
+    db.prepare("UPDATE imports SET updated_at = ? WHERE range_end = ?").run(
+      "2030-01-01T00:00:00.000Z",
+      firstPayload.range.end,
+    );
+
+    const newestUpdate = await getJson<{ sources: Array<Record<string, any>> }>(
+      "/apple-health/sources",
+    );
+    expect(newestUpdate.sources[0]).toMatchObject({
+      importCount: 2,
+      source: { app: "Latest App", deviceIdentifier: "device-1", deviceName: "Latest iPhone" },
+    });
+  });
+
   test("returns filtered daily metrics", async () => {
     await postPayload(validPayload());
 
