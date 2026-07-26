@@ -35,6 +35,19 @@ describe("database migrations", () => {
     db.close();
   });
 
+  test.each(Array.from({ length: LATEST_DATABASE_VERSION }, (_, index) => index + 1))(
+    "resumes migration from version %i",
+    (version) => {
+      const database = new Database(temporaryDatabasePath());
+      migrateDatabase(database, version);
+      expect(database.pragma("user_version", { simple: true })).toBe(version);
+
+      migrateDatabase(database);
+      expect(database.pragma("user_version", { simple: true })).toBe(LATEST_DATABASE_VERSION);
+      database.close();
+    },
+  );
+
   test("preserves and normalizes data while adopting an unversioned database", () => {
     const path = temporaryDatabasePath();
     const legacy = new Database(path);
