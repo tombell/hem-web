@@ -751,6 +751,22 @@ describe("POST /apple-health/import", () => {
     expect(countRows("imports")).toBe(0);
   });
 
+  test("accepts zero-duration health records", async () => {
+    const payload = validPayload();
+    payload.samples[0].end = payload.samples[0].start;
+    payload.categorySamples[0].end = payload.categorySamples[0].start;
+    payload.workouts[0].end = payload.workouts[0].start;
+    payload.sleep[0].end = payload.sleep[0].start;
+
+    const response = await postPayload(payload);
+
+    expect(response.statusCode).toBe(201);
+    expect(countRows("samples")).toBe(1);
+    expect(countRows("category_samples")).toBe(2);
+    expect(countRows("workouts")).toBe(1);
+    expect(countRows("sleep")).toBe(1);
+  });
+
   test("rejects invalid dates, unordered ranges, and out-of-range records", async () => {
     const invalidTimestamp = validPayload();
     invalidTimestamp.generatedAt = "2026-02-30T00:00:00Z";
@@ -762,7 +778,7 @@ describe("POST /apple-health/import", () => {
     unorderedRange.range.end = unorderedRange.range.start;
 
     const unorderedSample = validPayload();
-    unorderedSample.samples[0].end = unorderedSample.samples[0].start;
+    unorderedSample.samples[0].end = "2026-06-14T23:59:59+01:00";
 
     const outOfRangeSample = validPayload();
     outOfRangeSample.samples[0].start = "2026-06-14T23:00:00+01:00";

@@ -63,7 +63,7 @@ curl --fail-with-body \
   http://127.0.0.1:3000/apple-health/import
 ```
 
-The response identifies whether the range was created, duplicated, or replaced and includes normalized fact counts.
+The response identifies whether the range was created, duplicated, or replaced and includes normalized fact counts. Health record intervals allow `end` to equal `start`, preserving zero-duration HealthKit samples.
 
 Query endpoints cover sources, imports, daily metrics, samples, category samples, workouts, and sleep. Collection responses include `hasMore` and an opaque `nextCursor`. Pass that value back as `cursor` while retaining the same filters:
 

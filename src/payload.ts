@@ -454,8 +454,8 @@ function validateInterval(input: Record<string, any>, path: string): ValidationR
   const endResult = requireIsoDateTime(input.end, `${path}.end`);
   if (!endResult.ok) return endResult;
 
-  if (parseRfc3339(startResult.value)! >= parseRfc3339(endResult.value)!) {
-    return invalid(`${path}.end must be after ${path}.start`);
+  if (parseRfc3339(startResult.value)! > parseRfc3339(endResult.value)!) {
+    return invalid(`${path}.end must not be before ${path}.start`);
   }
 
   return { ok: true, value: undefined };
