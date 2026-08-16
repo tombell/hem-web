@@ -19,21 +19,23 @@ set +a
 
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:${PATH:-/usr/bin:/bin:/usr/sbin:/sbin}"
 
-if [[ -n "${PNPM_BIN:-}" ]]; then
-  exec "$PNPM_BIN" start
+if [[ -n "${NODE_BIN:-}" ]]; then
+  exec "$NODE_BIN" src/server.ts
 fi
 
 if [[ -n "${MISE_BIN:-}" ]]; then
-  exec "$MISE_BIN" exec -- pnpm start
+  NODE_BIN="$($MISE_BIN which node)"
+  exec "$NODE_BIN" src/server.ts
 fi
 
 if command -v mise >/dev/null 2>&1; then
-  exec "$(command -v mise)" exec -- pnpm start
+  NODE_BIN="$(mise which node)"
+  exec "$NODE_BIN" src/server.ts
 fi
 
-if command -v pnpm >/dev/null 2>&1; then
-  exec "$(command -v pnpm)" start
+if command -v node >/dev/null 2>&1; then
+  exec "$(command -v node)" src/server.ts
 fi
 
-printf 'hem-web: neither mise nor pnpm was found; set MISE_BIN or PNPM_BIN\n' >&2
+printf 'hem-web: neither mise nor node was found; set MISE_BIN or NODE_BIN\n' >&2
 exit 127

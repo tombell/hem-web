@@ -1,8 +1,8 @@
 import type { FastifyInstance } from "fastify";
 
-import type { AppConfig } from "../config";
-import { OPENAPI_DOCUMENT } from "../openapi";
-import { sendJson } from "./shared";
+import type { AppConfig } from "../config.ts";
+import { OPENAPI_DOCUMENT } from "../openapi.ts";
+import { sendJson } from "./shared.ts";
 
 export function registerOpenApiRoutes(server: FastifyInstance, config: AppConfig): void {
   server.get("/openapi.json", async (_request, reply) => {

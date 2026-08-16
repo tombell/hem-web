@@ -1,10 +1,10 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 
-import type { AppConfig } from "../config";
-import type { HealthDatabase } from "../db";
-import { importHealthPayload } from "../importer";
-import { validateHealthPayload } from "../payload";
-import { handleHealthQueryRequest } from "../query-api";
+import type { AppConfig } from "../config.ts";
+import type { HealthDatabase } from "../db.ts";
+import { importHealthPayload } from "../importer.ts";
+import { validateHealthPayload } from "../payload.ts";
+import { handleHealthQueryRequest } from "../query-api.ts";
 import {
   elapsedMs,
   isAuthorized,
@@ -13,7 +13,7 @@ import {
   type MetadataLogger,
   type ParsedJsonBody,
   sendJson,
-} from "./shared";
+} from "./shared.ts";
 
 interface AppleHealthRouteDependencies {
   config: AppConfig;

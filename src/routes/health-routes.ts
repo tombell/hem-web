@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 
-import type { HealthDatabase } from "../db";
-import { elapsedMs, type MetadataLogger, sendJson } from "./shared";
+import type { HealthDatabase } from "../db.ts";
+import { elapsedMs, type MetadataLogger, sendJson } from "./shared.ts";
 
 interface HealthRouteDependencies {
   db: HealthDatabase;

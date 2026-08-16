@@ -1,4 +1,4 @@
-import { parseIsoDate, parseRfc3339 } from "./date-time";
+import { parseIsoDate, parseRfc3339 } from "./date-time.ts";
 
 export interface QuantityValue {
   value: number;

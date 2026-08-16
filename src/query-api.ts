@@ -1,5 +1,5 @@
-import { parseIsoDate, parseRfc3339 } from "./date-time";
-import type { HealthDatabase } from "./db";
+import { parseIsoDate, parseRfc3339 } from "./date-time.ts";
+import type { HealthDatabase } from "./db.ts";
 
 export interface ApiResult {
   body: unknown;

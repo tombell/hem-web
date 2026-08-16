@@ -16,16 +16,16 @@ test("launch script supports configurable paths and environment precedence", () 
   temporaryDirectory = mkdtempSync(join(tmpdir(), "hem-web-launch-test-"));
   const externalEnv = join(temporaryDirectory, "external.env");
   const projectEnv = join(temporaryDirectory, "project.env");
-  const fakePnpm = join(temporaryDirectory, "pnpm");
+  const fakeNode = join(temporaryDirectory, "node");
   const capture = join(temporaryDirectory, "capture");
 
   writeFileSync(externalEnv, "HEM_TEST_VALUE=external\n");
   writeFileSync(projectEnv, "HEM_TEST_VALUE=project\n");
   writeFileSync(
-    fakePnpm,
+    fakeNode,
     '#!/usr/bin/env bash\nprintf "%s\\n%s\\n%s\\n" "$PWD" "$HEM_TEST_VALUE" "$1" > "$CAPTURE_PATH"\n',
   );
-  chmodSync(fakePnpm, 0o755);
+  chmodSync(fakeNode, 0o755);
 
   const result = spawnSync("bash", [resolve("scripts/start-launchd.sh")], {
     encoding: "utf8",
@@ -35,7 +35,7 @@ test("launch script supports configurable paths and environment precedence", () 
       HEM_WEB_ENV_FILE: externalEnv,
       HEM_WEB_PROJECT_DIR: process.cwd(),
       HEM_WEB_PROJECT_ENV_FILE: projectEnv,
-      PNPM_BIN: fakePnpm,
+      NODE_BIN: fakeNode,
     },
   });
 
@@ -44,6 +44,6 @@ test("launch script supports configurable paths and environment precedence", () 
   expect(readFileSync(capture, "utf8").trim().split("\n")).toEqual([
     process.cwd(),
     "project",
-    "start",
+    "src/server.ts",
   ]);
 });

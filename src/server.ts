@@ -1,14 +1,14 @@
 import rateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance } from "fastify";
 
-import { type AppConfig, loadConfig } from "./config";
-import type { HealthDatabase } from "./db";
-import { openDatabase } from "./db";
-import { registerAppleHealthRoutes } from "./routes/apple-health-routes";
-import { registerHealthRoutes } from "./routes/health-routes";
-import { registerNotFoundRoute } from "./routes/not-found-routes";
-import { registerOpenApiRoutes } from "./routes/openapi-routes";
-import type { MetadataLogger, ParsedJsonBody } from "./routes/shared";
+import { type AppConfig, loadConfig } from "./config.ts";
+import type { HealthDatabase } from "./db.ts";
+import { openDatabase } from "./db.ts";
+import { registerAppleHealthRoutes } from "./routes/apple-health-routes.ts";
+import { registerHealthRoutes } from "./routes/health-routes.ts";
+import { registerNotFoundRoute } from "./routes/not-found-routes.ts";
+import { registerOpenApiRoutes } from "./routes/openapi-routes.ts";
+import type { MetadataLogger, ParsedJsonBody } from "./routes/shared.ts";
 
 interface ServerDependencies {
   closeDatabaseOnClose?: boolean;

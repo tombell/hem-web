@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 
-import { sendJson } from "./shared";
+import { sendJson } from "./shared.ts";
 
 export function registerNotFoundRoute(server: FastifyInstance): void {
   server.setNotFoundHandler(async (_request, reply) => {

@@ -3,7 +3,7 @@ import { dirname } from "node:path";
 
 import Database, { type Database as HealthDatabase } from "better-sqlite3";
 
-import { parseRfc3339 } from "./date-time";
+import { parseRfc3339 } from "./date-time.ts";
 
 export type { HealthDatabase };
 

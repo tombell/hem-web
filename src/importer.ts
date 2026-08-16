@@ -1,8 +1,13 @@
 import { createHash } from "node:crypto";
 
-import { requireEpochMilliseconds } from "./date-time";
-import type { HealthDatabase } from "./db";
-import { type HealthPayload, type QuantityValue, getSourceKey, isQuantityValue } from "./payload";
+import { requireEpochMilliseconds } from "./date-time.ts";
+import type { HealthDatabase } from "./db.ts";
+import {
+  type HealthPayload,
+  type QuantityValue,
+  getSourceKey,
+  isQuantityValue,
+} from "./payload.ts";
 
 export interface ImportCounts {
   categorySamples: number;

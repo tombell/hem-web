@@ -114,10 +114,10 @@ Start the service and confirm `/ready` before deleting the preserved database.
 | `HEM_WEB_PROJECT_DIR`      | Project directory; defaults to the script's parent directory.   |
 | `HEM_WEB_ENV_FILE`         | External environment file; defaults to `~/.config/hem-web/env`. |
 | `HEM_WEB_PROJECT_ENV_FILE` | Project environment file; defaults to `<project>/.env`.         |
-| `MISE_BIN`                 | Explicit mise executable.                                       |
-| `PNPM_BIN`                 | Explicit pnpm executable; bypasses mise.                        |
+| `MISE_BIN`                 | Explicit mise executable used to locate Node.                   |
+| `NODE_BIN`                 | Explicit Node executable; bypasses mise discovery.              |
 
-The external environment file is loaded first and the project environment file may override it. The script prefers `PNPM_BIN`, then `MISE_BIN`, discovered mise, and discovered pnpm.
+The external environment file is loaded first and the project environment file may override it. The script prefers `NODE_BIN`, then `MISE_BIN`, discovered mise, and discovered Node. It executes `node src/server.ts` directly, so launchd supervises the single application process without pnpm, tsx, or esbuild intermediaries.
 
 ## Security
 
