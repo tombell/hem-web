@@ -15,8 +15,6 @@
 !src/openapi.json
 !test/
 !test/*.ts
-!scripts/
-!scripts/start-launchd.sh
 # Defense in depth if an allowlist is extended later.
 **/node_modules/**
 **/.git/**
