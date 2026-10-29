@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 
-import type { FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
 export interface MetadataLogger {
   error: (event: Record<string, unknown>) => void;
@@ -35,6 +35,24 @@ export function sendJson(
   headers: Record<string, string> = {},
 ): FastifyReply {
   return reply.headers(headers).code(status).send(body);
+}
+
+export function registerMethodNotAllowed(
+  server: FastifyInstance,
+  url: string,
+  allow: "GET" | "POST",
+): void {
+  server.route({
+    handler: async (_request, reply) =>
+      sendJson(
+        reply,
+        405,
+        { error: { category: "method_not_allowed", message: "Method not allowed" }, ok: false },
+        { Allow: allow },
+      ),
+    method: ["DELETE", "GET", "PATCH", "POST", "PUT"].filter((method) => method !== allow),
+    url,
+  });
 }
 
 export function logError(
