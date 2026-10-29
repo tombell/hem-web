@@ -13,19 +13,19 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@fastify/rate-limit": "^11.1.0",
-    "better-sqlite3": "^12.11.1",
-    "fastify": "^5.10.0"
+    "@fastify/rate-limit": "^11.2.1",
+    "better-sqlite3": "^13.0.3",
+    "fastify": "^5.12.7"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^24.13.3",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^24.19.2",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
-    "oxfmt": "^0.52.0",
-    "oxlint": "^1.75.0",
-    "tsx": "^4.23.1",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.10"
+    "oxfmt": "^0.75.0",
+    "oxlint": "^1.90.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
   }
 }
