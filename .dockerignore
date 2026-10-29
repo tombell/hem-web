@@ -17,11 +17,6 @@
 !test/*.ts
 !scripts/
 !scripts/start-launchd.sh
-!scripts/container-entrypoint.sh
-!scripts/container-watchdog.py
-!scripts/test-container-watchdog.py
-!docs/
-!docs/container-deployment.md
 # Defense in depth if an allowlist is extended later.
 **/node_modules/**
 **/.git/**

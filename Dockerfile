@@ -12,8 +12,7 @@ FROM toolchain AS checks
 RUN pnpm install --frozen-lockfile
 COPY src/ ./src/
 COPY test/ ./test/
-COPY scripts/ ./scripts/
-COPY docs/ ./docs/
+COPY scripts/start-launchd.sh ./scripts/start-launchd.sh
 COPY README.md tsconfig.json oxlint.config.ts oxfmt.config.ts Dockerfile .dockerignore .gitignore ./
 RUN pnpm test && pnpm typecheck && pnpm lint && pnpm fmt:check
 
@@ -31,12 +30,11 @@ WORKDIR /app
 COPY --from=prod-deps /app/node_modules/ ./node_modules/
 COPY package.json ./
 COPY src/ ./src/
-COPY --chmod=0555 scripts/container-entrypoint.sh /usr/local/bin/hem-web-entrypoint
 RUN mkdir /data && chown 1000:1000 /data && chmod 0700 /data \
     && chmod -R a-w /app \
     && node --input-type=module -e 'import Database from "better-sqlite3"; const db = new Database(":memory:"); if (process.platform !== "linux" || process.arch !== "arm64" || db.prepare("SELECT 1 AS n").get().n !== 1) process.exit(1); db.close();'
 USER 1000:1000
 EXPOSE 3000
 STOPSIGNAL SIGTERM
-ENTRYPOINT ["/usr/local/bin/hem-web-entrypoint"]
+ENTRYPOINT ["/bin/sh", "-c", "set -eu; umask 077; exec \"$@\"", "--"]
 CMD ["node", "src/server.ts"]
