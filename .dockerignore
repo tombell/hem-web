@@ -1,0 +1,37 @@
+# Deny by default: no repository history, host modules, health data or secrets.
+**
+!Dockerfile
+!.dockerignore
+!.gitignore
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tsconfig.json
+!oxlint.config.ts
+!oxfmt.config.ts
+!README.md
+!src/
+!src/**/*.ts
+!src/openapi.json
+!test/
+!test/*.ts
+!scripts/
+!scripts/start-launchd.sh
+!scripts/container-entrypoint.sh
+!scripts/container-watchdog.py
+!scripts/test-container-watchdog.py
+!docs/
+!docs/container-deployment.md
+# Defense in depth if an allowlist is extended later.
+**/node_modules/**
+**/.git/**
+**/.env
+**/.env.*
+**/data/**
+**/*.sqlite*
+**/*.db*
+**/*.pem
+**/*.key
+**/*.log
+**/*migration*/**
+**/*private*/**

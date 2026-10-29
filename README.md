@@ -107,6 +107,11 @@ Start the service and confirm `/ready` before deleting the preserved database.
 
 ## Deployment
 
+For the pinned Linux ARM64 image, isolated verification, named-volume storage,
+loopback publication and narrow Apple Container recovery, see
+[Container deployment](docs/container-deployment.md). This is opt-in; the native
+launcher remains available for rollback and no proxy changes are required.
+
 `scripts/start-launchd.sh` can be used by launchd without repository- or user-specific absolute paths. It supports:
 
 | Variable                   | Purpose                                                         |
