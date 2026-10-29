@@ -107,17 +107,32 @@ Start the service and confirm `/ready` before deleting the preserved database.
 
 ## Deployment
 
-`scripts/start-launchd.sh` can be used by launchd without repository- or user-specific absolute paths. It supports:
+The `Dockerfile` builds a self-contained image that listens on `0.0.0.0:3000` and stores the database at `/data/hem.sqlite`. Run it with Docker or Apple's [`container`](https://github.com/apple/container) tool.
 
-| Variable                   | Purpose                                                         |
-| -------------------------- | --------------------------------------------------------------- |
-| `HEM_WEB_PROJECT_DIR`      | Project directory; defaults to the script's parent directory.   |
-| `HEM_WEB_ENV_FILE`         | External environment file; defaults to `~/.config/hem-web/env`. |
-| `HEM_WEB_PROJECT_ENV_FILE` | Project environment file; defaults to `<project>/.env`.         |
-| `MISE_BIN`                 | Explicit mise executable used to locate Node.                   |
-| `NODE_BIN`                 | Explicit Node executable; bypasses mise discovery.              |
+### Docker
 
-The external environment file is loaded first and the project environment file may override it. The script prefers `NODE_BIN`, then `MISE_BIN`, discovered mise, and discovered Node. It executes `node src/server.ts` directly, so launchd supervises the single application process without pnpm, tsx, or esbuild intermediaries.
+```sh
+docker build -t hem-web .
+docker run -d --name hem-web \
+  --env-file .env \
+  -p 127.0.0.1:3000:3000 \
+  -v hem-web-data:/data \
+  hem-web
+```
+
+### Apple container
+
+Requires an Apple silicon Mac. Start the container system service once, then build and run:
+
+```sh
+container system start
+container build -t hem-web .
+container run -d --name hem-web \
+  --env-file .env \
+  -p 127.0.0.1:3000:3000 \
+  -v hem-web-data:/data \
+  hem-web
+```
 
 ## Security
 

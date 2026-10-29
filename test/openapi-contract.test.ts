@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import type { AppConfig } from "../src/config";
 import { openDatabase, type HealthDatabase } from "../src/db";
-import { OPENAPI_DOCUMENT } from "../src/openapi";
+import openApiDocument from "../src/openapi.json" with { type: "json" };
 import { createHealthImportServer } from "../src/server";
 
 const CONFIG: AppConfig = {
@@ -32,7 +32,7 @@ const MINIMAL_PAYLOAD = {
   source: { deviceName: "Contract Test iPhone" },
 };
 
-const document = OPENAPI_DOCUMENT as any;
+const document = openApiDocument as any;
 const ajv = new Ajv2020({ allErrors: true, strict: false });
 addFormats(ajv);
 

@@ -41,15 +41,6 @@ export function registerAppleHealthRoutes(
       });
     }
 
-    const contentLength = request.headers["content-length"];
-    if (contentLength !== undefined && Number(contentLength) > config.maxBodyBytes) {
-      logError(logger, startedAt, "body_too_large");
-      return sendJson(reply, 413, {
-        error: { category: "body_too_large", message: "Request body too large" },
-        ok: false,
-      });
-    }
-
     const body = request.body as ParsedJsonBody;
     const parsed = body.parsed;
     const rawBody = body.raw;
