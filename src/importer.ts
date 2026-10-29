@@ -2,12 +2,7 @@ import { createHash } from "node:crypto";
 
 import { requireEpochMilliseconds } from "./date-time.ts";
 import type { HealthDatabase } from "./db.ts";
-import {
-  type HealthPayload,
-  type QuantityValue,
-  getSourceKey,
-  isQuantityValue,
-} from "./payload.ts";
+import { type HealthPayload, getSourceKey, isQuantityValue } from "./payload.ts";
 
 export interface ImportCounts {
   categorySamples: number;
@@ -29,8 +24,6 @@ interface ExistingImport {
   id: number;
   payload_hash: string;
 }
-
-type PreparedStatements = ReturnType<typeof prepareStatements>;
 
 export function importHealthPayload(
   db: HealthDatabase,
@@ -64,12 +57,13 @@ export function importHealthPayload(
     }
 
     const now = new Date().toISOString();
-    const importId = existing
-      ? replaceImport(db, existing.id, payload, sourceKey, payloadHash, rawJson, now)
-      : createImport(db, payload, sourceKey, payloadHash, rawJson, now);
-
+    let importId: number;
     if (existing) {
+      importId = existing.id;
+      replaceImport(db, importId, payload, payloadHash, rawJson, now);
       deleteFactsForImport(db, importId);
+    } else {
+      importId = createImport(db, payload, sourceKey, payloadHash, rawJson, now);
     }
 
     insertNormalizedFacts(db, importId, sourceKey, payload, now);
@@ -145,11 +139,10 @@ function replaceImport(
   db: HealthDatabase,
   importId: number,
   payload: HealthPayload,
-  sourceKey: string,
   payloadHash: string,
   rawJson: string,
   now: string,
-): number {
+): void {
   db.prepare(`
     UPDATE imports
     SET
@@ -165,10 +158,6 @@ function replaceImport(
       raw_json = ?,
       updated_at = ?
     WHERE id = ?
-      AND schema_version = ?
-      AND range_start = ?
-      AND range_end = ?
-      AND source_key = ?
   `).run(
     payload.range.kind,
     payload.range.calendar,
@@ -182,21 +171,13 @@ function replaceImport(
     rawJson,
     now,
     importId,
-    payload.schemaVersion,
-    payload.range.start,
-    payload.range.end,
-    sourceKey,
   );
-
-  return importId;
 }
 
 function deleteFactsForImport(db: HealthDatabase, importId: number): void {
-  db.prepare("DELETE FROM category_samples WHERE import_id = ?").run(importId);
-  db.prepare("DELETE FROM daily_metrics WHERE import_id = ?").run(importId);
-  db.prepare("DELETE FROM samples WHERE import_id = ?").run(importId);
-  db.prepare("DELETE FROM workouts WHERE import_id = ?").run(importId);
-  db.prepare("DELETE FROM sleep WHERE import_id = ?").run(importId);
+  for (const table of ["category_samples", "daily_metrics", "samples", "workouts", "sleep"]) {
+    db.prepare(`DELETE FROM ${table} WHERE import_id = ?`).run(importId);
+  }
 }
 
 function insertNormalizedFacts(
@@ -208,11 +189,93 @@ function insertNormalizedFacts(
 ): void {
   const statements = prepareStatements(db);
 
-  insertCategorySamples(statements, importId, sourceKey, payload, now);
-  insertDailyMetrics(statements, importId, sourceKey, payload, now);
-  insertSamples(statements, importId, sourceKey, payload, now);
-  insertWorkouts(statements, importId, sourceKey, payload, now);
-  insertSleep(statements, importId, sourceKey, payload, now);
+  for (const categorySample of payload.categorySamples) {
+    statements.upsertCategorySample.run(
+      sourceKey,
+      categorySample.type,
+      categorySample.id ?? null,
+      categorySample.start,
+      categorySample.end,
+      requireEpochMilliseconds(categorySample.start),
+      requireEpochMilliseconds(categorySample.end),
+      categorySample.value,
+      importId,
+      now,
+      now,
+    );
+  }
+
+  for (const dailyMetric of payload.dailyMetrics) {
+    for (const [metric, quantity] of Object.entries(dailyMetric)) {
+      if (metric === "date" || !isQuantityValue(quantity)) continue;
+      statements.upsertDailyMetric.run(
+        sourceKey,
+        dailyMetric.date,
+        metric,
+        quantity.value,
+        quantity.unit,
+        importId,
+        now,
+        now,
+      );
+    }
+  }
+
+  for (const sample of payload.samples) {
+    statements.upsertSample.run(
+      sourceKey,
+      sample.type,
+      sample.id ?? null,
+      sample.start,
+      sample.end,
+      requireEpochMilliseconds(sample.start),
+      requireEpochMilliseconds(sample.end),
+      sample.value,
+      sample.unit,
+      importId,
+      now,
+      now,
+    );
+  }
+
+  for (const workout of payload.workouts) {
+    const workoutKey =
+      workout.id?.trim() || `${workout.activityType}:${workout.start}:${workout.end}`;
+    statements.upsertWorkout.run(
+      sourceKey,
+      workoutKey,
+      workout.id ?? null,
+      workout.activityType,
+      workout.start,
+      workout.end,
+      requireEpochMilliseconds(workout.start),
+      requireEpochMilliseconds(workout.end),
+      workout.duration?.value ?? null,
+      workout.duration?.unit ?? null,
+      workout.activeEnergy?.value ?? null,
+      workout.activeEnergy?.unit ?? null,
+      workout.distance?.value ?? null,
+      workout.distance?.unit ?? null,
+      importId,
+      now,
+      now,
+    );
+  }
+
+  for (const sleep of payload.sleep) {
+    statements.upsertSleep.run(
+      sourceKey,
+      sleep.id ?? null,
+      sleep.start,
+      sleep.end,
+      requireEpochMilliseconds(sleep.start),
+      requireEpochMilliseconds(sleep.end),
+      sleep.value,
+      importId,
+      now,
+      now,
+    );
+  }
 }
 
 function prepareStatements(db: HealthDatabase) {
@@ -370,134 +433,6 @@ function prepareStatements(db: HealthDatabase) {
   };
 }
 
-function insertCategorySamples(
-  statements: PreparedStatements,
-  importId: number,
-  sourceKey: string,
-  payload: HealthPayload,
-  now: string,
-): void {
-  for (const categorySample of payload.categorySamples) {
-    statements.upsertCategorySample.run(
-      sourceKey,
-      categorySample.type,
-      categorySample.id ?? null,
-      categorySample.start,
-      categorySample.end,
-      requireEpochMilliseconds(categorySample.start),
-      requireEpochMilliseconds(categorySample.end),
-      categorySample.value,
-      importId,
-      now,
-      now,
-    );
-  }
-}
-
-function insertDailyMetrics(
-  statements: PreparedStatements,
-  importId: number,
-  sourceKey: string,
-  payload: HealthPayload,
-  now: string,
-): void {
-  for (const dailyMetric of payload.dailyMetrics) {
-    for (const [metric, quantity] of Object.entries(dailyMetric)) {
-      if (metric === "date" || !isQuantityValue(quantity)) continue;
-      statements.upsertDailyMetric.run(
-        sourceKey,
-        dailyMetric.date,
-        metric,
-        quantity.value,
-        quantity.unit,
-        importId,
-        now,
-        now,
-      );
-    }
-  }
-}
-
-function insertSamples(
-  statements: PreparedStatements,
-  importId: number,
-  sourceKey: string,
-  payload: HealthPayload,
-  now: string,
-): void {
-  for (const sample of payload.samples) {
-    statements.upsertSample.run(
-      sourceKey,
-      sample.type,
-      sample.id ?? null,
-      sample.start,
-      sample.end,
-      requireEpochMilliseconds(sample.start),
-      requireEpochMilliseconds(sample.end),
-      sample.value,
-      sample.unit,
-      importId,
-      now,
-      now,
-    );
-  }
-}
-
-function insertWorkouts(
-  statements: PreparedStatements,
-  importId: number,
-  sourceKey: string,
-  payload: HealthPayload,
-  now: string,
-): void {
-  for (const workout of payload.workouts) {
-    const workoutKey =
-      workout.id?.trim() || `${workout.activityType}:${workout.start}:${workout.end}`;
-    statements.upsertWorkout.run(
-      sourceKey,
-      workoutKey,
-      workout.id ?? null,
-      workout.activityType,
-      workout.start,
-      workout.end,
-      requireEpochMilliseconds(workout.start),
-      requireEpochMilliseconds(workout.end),
-      quantityValue(workout.duration),
-      quantityUnit(workout.duration),
-      quantityValue(workout.activeEnergy),
-      quantityUnit(workout.activeEnergy),
-      quantityValue(workout.distance),
-      quantityUnit(workout.distance),
-      importId,
-      now,
-      now,
-    );
-  }
-}
-
-function insertSleep(
-  statements: PreparedStatements,
-  importId: number,
-  sourceKey: string,
-  payload: HealthPayload,
-  now: string,
-): void {
-  for (const sleep of payload.sleep) {
-    statements.upsertSleep.run(
-      sourceKey,
-      sleep.id ?? null,
-      sleep.start,
-      sleep.end,
-      requireEpochMilliseconds(sleep.start),
-      requireEpochMilliseconds(sleep.end),
-      sleep.value,
-      importId,
-      now,
-      now,
-    );
-  }
-}
-
 function countPayloadFacts(payload: HealthPayload): ImportCounts {
   const dailyMetrics = payload.dailyMetrics.reduce((count, dailyMetric) => {
     return count + Object.values(dailyMetric).filter(isQuantityValue).length;
@@ -510,14 +445,6 @@ function countPayloadFacts(payload: HealthPayload): ImportCounts {
     sleep: payload.sleep.length,
     workouts: payload.workouts.length,
   };
-}
-
-function quantityValue(quantity: QuantityValue | undefined): number | null {
-  return quantity?.value ?? null;
-}
-
-function quantityUnit(quantity: QuantityValue | undefined): string | null {
-  return quantity?.unit ?? null;
 }
 
 function sha256Hex(value: string): string {

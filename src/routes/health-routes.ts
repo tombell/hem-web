@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 
 import type { HealthDatabase } from "../db.ts";
-import { elapsedMs, type MetadataLogger, sendJson } from "./shared.ts";
+import { elapsedMs, type MetadataLogger, registerMethodNotAllowed, sendJson } from "./shared.ts";
 
 interface HealthRouteDependencies {
   db: HealthDatabase;
@@ -31,17 +31,6 @@ export function registerHealthRoutes(
     }
   });
 
-  for (const url of ["/health", "/ready"]) {
-    server.route({
-      handler: async (_request, reply) =>
-        sendJson(
-          reply,
-          405,
-          { error: { category: "method_not_allowed", message: "Method not allowed" }, ok: false },
-          { Allow: "GET" },
-        ),
-      method: ["DELETE", "PATCH", "POST", "PUT"],
-      url,
-    });
-  }
+  registerMethodNotAllowed(server, "/health", "GET");
+  registerMethodNotAllowed(server, "/ready", "GET");
 }

@@ -12,6 +12,7 @@ import {
   logError,
   type MetadataLogger,
   type ParsedJsonBody,
+  registerMethodNotAllowed,
   sendJson,
 } from "./shared.ts";
 
@@ -84,18 +85,7 @@ export function registerAppleHealthRoutes(
     }
   });
 
-  server.route({
-    handler: async (_request, reply) => {
-      return sendJson(
-        reply,
-        405,
-        { error: { category: "method_not_allowed", message: "Method not allowed" }, ok: false },
-        { Allow: "POST" },
-      );
-    },
-    method: ["DELETE", "GET", "PATCH", "PUT"],
-    url: "/apple-health/import",
-  });
+  registerMethodNotAllowed(server, "/apple-health/import", "POST");
 
   server.get("/apple-health/import/test", async (request, reply) => {
     const startedAt = performance.now();
@@ -133,18 +123,7 @@ export function registerAppleHealthRoutes(
     return sendJson(reply, result.status, result.body, result.headers);
   });
 
-  server.route({
-    handler: async (_request, reply) => {
-      return sendJson(
-        reply,
-        405,
-        { error: { category: "method_not_allowed", message: "Method not allowed" }, ok: false },
-        { Allow: "GET" },
-      );
-    },
-    method: ["DELETE", "PATCH", "POST", "PUT"],
-    url: "/apple-health/*",
-  });
+  registerMethodNotAllowed(server, "/apple-health/*", "GET");
 }
 
 function sendUnauthorized(reply: FastifyReply): FastifyReply {

@@ -1,5 +1,5 @@
 import rateLimit from "@fastify/rate-limit";
-import Fastify, { type FastifyInstance } from "fastify";
+import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
 
 import { type AppConfig, loadConfig } from "./config.ts";
 import type { HealthDatabase } from "./db.ts";
@@ -8,7 +8,7 @@ import { registerAppleHealthRoutes } from "./routes/apple-health-routes.ts";
 import { registerHealthRoutes } from "./routes/health-routes.ts";
 import { registerNotFoundRoute } from "./routes/not-found-routes.ts";
 import { registerOpenApiRoutes } from "./routes/openapi-routes.ts";
-import type { MetadataLogger, ParsedJsonBody } from "./routes/shared.ts";
+import { elapsedMs, type MetadataLogger, type ParsedJsonBody } from "./routes/shared.ts";
 
 interface ServerDependencies {
   closeDatabaseOnClose?: boolean;
@@ -73,12 +73,15 @@ export function createHealthImportServer({
     let category = "server_error";
     let message = "Request failed";
     let status = 500;
+    const { code, statusCode } = (
+      typeof error === "object" && error !== null ? error : {}
+    ) as Partial<FastifyError>;
 
-    if (hasStatusCode(error, 429)) {
+    if (statusCode === 429) {
       category = "rate_limit";
       message = "Rate limit exceeded";
       status = 429;
-    } else if (hasErrorCode(error, "FST_ERR_CTP_BODY_TOO_LARGE")) {
+    } else if (code === "FST_ERR_CTP_BODY_TOO_LARGE") {
       category = "body_too_large";
       message = "Request body too large";
       status = 413;
@@ -88,10 +91,11 @@ export function createHealthImportServer({
       status = 400;
     }
 
+    const startedAt = requestStartedAt.get(request);
     logger.error({
       category,
-      durationMs: elapsedSince(requestStartedAt.get(request)),
-      errorCode: getErrorCode(error),
+      durationMs: startedAt === undefined ? 0 : elapsedMs(startedAt),
+      errorCode: typeof code === "string" ? code : undefined,
       errorName: error instanceof Error ? error.name : "UnknownError",
       event: "http_request_error",
       method: request.method,
@@ -175,29 +179,6 @@ function registerGracefulShutdown(server: FastifyInstance): void {
     process.removeListener("SIGINT", onSigint);
     process.removeListener("SIGTERM", onSigterm);
   });
-}
-
-function hasErrorCode(error: unknown, code: string): error is { code: string } {
-  return typeof error === "object" && error !== null && "code" in error && error.code === code;
-}
-
-function elapsedSince(startedAt: number | undefined): number {
-  if (startedAt === undefined) return 0;
-  return Math.round((performance.now() - startedAt) * 100) / 100;
-}
-
-function getErrorCode(error: unknown): string | undefined {
-  if (typeof error !== "object" || error === null || !("code" in error)) return undefined;
-  return typeof error.code === "string" ? error.code : undefined;
-}
-
-function hasStatusCode(error: unknown, statusCode: number): error is { statusCode: number } {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "statusCode" in error &&
-    error.statusCode === statusCode
-  );
 }
 
 if (import.meta.main) {
