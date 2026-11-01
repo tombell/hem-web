@@ -106,7 +106,10 @@ export function registerAppleHealthRoutes(
   server.get("/apple-health/*", async (request, reply) => {
     const startedAt = performance.now();
 
-    if (!isAuthorized(request, config.bearerToken)) {
+    if (
+      !isAuthorized(request, config.bearerToken) &&
+      !(config.dashboardToken && isAuthorized(request, config.dashboardToken))
+    ) {
       logError(logger, startedAt, "auth", "apple_health_query_error");
       return sendUnauthorized(reply);
     }
