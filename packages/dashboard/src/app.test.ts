@@ -3,7 +3,7 @@ import { h, render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
-import { App } from "./main";
+import { App } from "./app";
 
 let container: HTMLDivElement;
 let fetcher: ReturnType<typeof vi.fn<(url: string, options: RequestInit) => Promise<Response>>>;
