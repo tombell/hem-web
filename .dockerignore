@@ -27,3 +27,14 @@
 **/*.log
 **/*migration*/**
 **/*private*/**
+
+!packages/
+!packages/dashboard/
+!packages/dashboard/package.json
+!packages/dashboard/tsconfig.json
+!packages/dashboard/vite.config.ts
+!packages/dashboard/index.html
+!packages/dashboard/src/
+!packages/dashboard/src/**
+**/node_modules/**
+**/dist/**

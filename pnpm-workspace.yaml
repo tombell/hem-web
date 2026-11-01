@@ -1,3 +1,5 @@
+packages:
+  - packages/*
 enableGlobalVirtualStore: false
 allowBuilds:
   better-sqlite3: true

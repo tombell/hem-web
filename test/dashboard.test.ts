@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+
 import { afterEach, expect, test } from "vite-plus/test";
 
 import { loadConfig } from "../src/config";
@@ -64,4 +66,25 @@ test("dashboard credentials must differ from the import credential", () => {
   expect(() =>
     loadConfig({ HERMES_HEALTH_BEARER_TOKEN: "same", HERMES_HEALTH_DASHBOARD_TOKEN: "same" }),
   ).toThrow("must differ");
+});
+
+test("serves dashboard assets without changing API or unknown routes", async () => {
+  const server = create();
+  expect((await server.inject("/dashboard")).headers.location).toBe("/dashboard/");
+  const response = await server.inject("/dashboard/");
+  if (existsSync(new URL("../packages/dashboard/dist/index.html", import.meta.url))) {
+    expect(response.statusCode).toBe(200);
+    expect(response.headers["content-type"]).toContain("text/html");
+    expect(response.headers["content-security-policy"]).toContain("frame-ancestors 'none'");
+    const asset = response.body.match(/src="([^"]+\.js)"/)![1];
+    const script = await server.inject(asset);
+    expect(script.statusCode).toBe(200);
+    expect(script.headers["content-type"]).toContain("javascript");
+    expect(script.body).not.toContain("write-secret");
+  } else {
+    expect(response.statusCode).toBe(503);
+  }
+  expect((await server.inject("/apple-health/sources")).statusCode).toBe(401);
+  expect((await server.inject("/unknown")).statusCode).toBe(404);
+  expect((await server.inject("/dashboard/missing.js")).statusCode).toBe(404);
 });

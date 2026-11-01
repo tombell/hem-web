@@ -52,6 +52,28 @@ Operational endpoints do not require authentication:
 - `GET /ready` — process and SQLite readiness
 - `GET /openapi.json` — OpenAPI 3.1 document
 
+## Dashboard
+
+The `@hem/dashboard` workspace package uses Preact, TypeScript, Tailwind CSS, and Vite+.
+Set `HERMES_HEALTH_DASHBOARD_TOKEN` to a separate high-entropy secret in `.env`, then build and start:
+
+```sh
+pnpm build
+pnpm start
+```
+
+Open `http://127.0.0.1:3000/dashboard/` and enter the dashboard token. The token stays in tab memory and clears on reload or disconnect. It can read Apple Health query endpoints but cannot import data. The existing import token continues to work for the iOS app. Without a dashboard token configured, the existing API behavior is unchanged.
+
+The dashboard shows daily metric charts and values, workouts, individual sleep intervals, and import history. Filters are stored in the URL; health records and credentials are never persisted to browser storage. Select one export source at a time to avoid combining duplicate data across devices. Date ranges are limited to 366 days. Queries follow pagination and fail visibly rather than presenting incomplete totals.
+
+Daily metric dates remain as exported. Timestamp filters use the browser's timezone and include the entire final calendar day. Sleep records are grouped by their local start date, with overlaps shown separately; no nightly duration total is inferred. Mixed units appear as separate metric series, and missing records appear as gaps, not zero. The overview cards show the latest recorded value within the selected range, not a period total.
+
+For development, run `pnpm start` in one terminal and `pnpm dev:dashboard` in another. Open the dashboard URL printed by Vite+. Its development proxy targets `http://127.0.0.1:3000`; change the package's Vite config if using another API port. Production assets are served by Fastify, and the container build includes them.
+
+Run `pnpm api:types` after changing `src/openapi.json`, then `pnpm fmt`. Generated response types are committed. The generator runs in an isolated, pinned TypeScript 5 tool environment because it uses compiler APIs not exposed by TypeScript 7; application checks continue to use the project's TypeScript 7 compiler.
+
+Manual check: connect, switch sources and date ranges, inspect missing days in a chart and its values table, visit workouts/sleep/imports, then disconnect. Check the layout on a narrow screen and navigate filters and tables with the keyboard.
+
 ## API
 
 All `/apple-health/*` endpoints require `Authorization: Bearer <token>`. Import an export with:
@@ -155,6 +177,7 @@ mise, dependencies by pnpm, and typechecking by TypeScript's `tsc`.
 ```sh
 pnpm test
 pnpm typecheck
+pnpm build
 pnpm lint
 pnpm fmt:check
 pnpm audit --prod
