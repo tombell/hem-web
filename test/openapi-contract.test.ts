@@ -1,7 +1,7 @@
 import addFormats from "ajv-formats";
 import Ajv2020 from "ajv/dist/2020.js";
 import type { LightMyRequestResponse } from "fastify";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
 
 import type { AppConfig } from "../src/config";
 import { openDatabase, type HealthDatabase } from "../src/db";

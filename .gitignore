@@ -8,3 +8,4 @@ data/*.sqlite-*
 .DS_Store
 
 .env
+.vitest/

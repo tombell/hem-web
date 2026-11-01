@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test } from "vite-plus/test";
 
 import { parseIsoDate, parseRfc3339, requireEpochMilliseconds } from "../src/date-time";
 
