@@ -15,7 +15,7 @@ COPY packages/dashboard/package.json ./packages/dashboard/package.json
 RUN pnpm install --frozen-lockfile --prod
 
 FROM deps AS dashboard
-RUN pnpm install --frozen-lockfile
+RUN CI=true pnpm install --frozen-lockfile
 COPY packages/dashboard/ ./packages/dashboard/
 RUN pnpm build
 
