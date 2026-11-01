@@ -818,6 +818,7 @@
     },
     "securitySchemes": {
       "bearerAuth": {
+        "description": "The import token authorizes all Apple Health operations. The optional dashboard token authorizes read-only query endpoints, but not POST /apple-health/import or GET /apple-health/import/test.",
         "scheme": "bearer",
         "type": "http"
       }

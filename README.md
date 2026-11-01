@@ -26,16 +26,17 @@ HERMES_HEALTH_BEARER_TOKEN=replace-with-a-long-random-secret
 
 ### Configuration
 
-| Variable                             | Default           | Description                                  |
-| ------------------------------------ | ----------------- | -------------------------------------------- |
-| `HERMES_HEALTH_BEARER_TOKEN`         | required          | Bearer token for Apple Health endpoints.     |
-| `HERMES_HEALTH_DB_PATH`              | `data/hem.sqlite` | SQLite database path.                        |
-| `HERMES_HEALTH_MAX_BODY_BYTES`       | `5242880`         | Maximum JSON import body size.               |
-| `HERMES_HEALTH_PUBLIC_URL`           | `/`               | HTTP(S) or absolute-path OpenAPI server URL. |
-| `HERMES_HEALTH_RATE_LIMIT_MAX`       | `300`             | Requests allowed per client IP and window.   |
-| `HERMES_HEALTH_RATE_LIMIT_WINDOW_MS` | `60000`           | In-memory rate-limit window in milliseconds. |
-| `HOST`                               | `127.0.0.1`       | Listen address.                              |
-| `PORT`                               | `3000`            | Listen port.                                 |
+| Variable                             | Default           | Description                                                                        |
+| ------------------------------------ | ----------------- | ---------------------------------------------------------------------------------- |
+| `HERMES_HEALTH_BEARER_TOKEN`         | required          | Bearer token for Apple Health endpoints.                                           |
+| `HERMES_HEALTH_DASHBOARD_TOKEN`      | unset             | Optional read-only token for dashboard queries. Must differ from the import token. |
+| `HERMES_HEALTH_DB_PATH`              | `data/hem.sqlite` | SQLite database path.                                                              |
+| `HERMES_HEALTH_MAX_BODY_BYTES`       | `5242880`         | Maximum JSON import body size.                                                     |
+| `HERMES_HEALTH_PUBLIC_URL`           | `/`               | HTTP(S) or absolute-path OpenAPI server URL.                                       |
+| `HERMES_HEALTH_RATE_LIMIT_MAX`       | `300`             | Requests allowed per client IP and window.                                         |
+| `HERMES_HEALTH_RATE_LIMIT_WINDOW_MS` | `60000`           | In-memory rate-limit window in milliseconds.                                       |
+| `HOST`                               | `127.0.0.1`       | Listen address.                                                                    |
+| `PORT`                               | `3000`            | Listen port.                                                                       |
 
 ## Running
 

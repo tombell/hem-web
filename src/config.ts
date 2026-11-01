@@ -5,6 +5,7 @@ import { loadEnvFiles, type Env } from "./env.ts";
 
 export interface AppConfig {
   bearerToken: string;
+  dashboardToken?: string;
   dbPath: string;
   host: string;
   maxBodyBytes: number;
@@ -29,8 +30,14 @@ export function loadConfig(env: Env = loadEnvFiles()): AppConfig {
     throw new Error("HERMES_HEALTH_BEARER_TOKEN is required");
   }
 
+  const dashboardToken = env.HERMES_HEALTH_DASHBOARD_TOKEN?.trim() || undefined;
+  if (dashboardToken === bearerToken) {
+    throw new Error("HERMES_HEALTH_DASHBOARD_TOKEN must differ from HERMES_HEALTH_BEARER_TOKEN");
+  }
+
   return {
     bearerToken,
+    dashboardToken,
     dbPath: env.HERMES_HEALTH_DB_PATH?.trim() || DEFAULT_DB_PATH,
     host: env.HOST?.trim() || DEFAULT_HOST,
     maxBodyBytes: parsePositiveInteger(

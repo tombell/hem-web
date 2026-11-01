@@ -145,7 +145,7 @@ describe("GET /openapi.json", () => {
     ).toEqual({
       $ref: "#/components/schemas/AppleHealthImportPayload",
     });
-    expect(document.components.securitySchemes.bearerAuth).toEqual({
+    expect(document.components.securitySchemes.bearerAuth).toMatchObject({
       scheme: "bearer",
       type: "http",
     });
