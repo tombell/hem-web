@@ -31,7 +31,7 @@ export async function collection<T>(
   for (let page = 0; page < 100; page++) {
     // Pages depend on the cursor returned by the previous response.
     // eslint-disable-next-line no-await-in-loop
-    const response = await fetch(`/apple-health/${endpoint}?${params}`, {
+    const response = await fetch(`../apple-health/${endpoint}?${params}`, {
       headers: { Authorization: `Bearer ${token}` },
       signal,
       cache: "no-store",

@@ -3,7 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({
-  base: "/dashboard/",
+  base: "./",
   plugins: [preact(), tailwindcss()],
   server: {
     host: "127.0.0.1",

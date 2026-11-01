@@ -64,6 +64,8 @@ pnpm start
 
 Open `http://127.0.0.1:3000/dashboard/` and enter the dashboard token. The token stays in tab memory and clears on reload or disconnect. It can read Apple Health query endpoints but cannot import data. The existing import token continues to work for the iOS app. Without a dashboard token configured, the existing API behavior is unchanged.
 
+When a reverse proxy strips a prefix such as `/hem`, open `/hem/dashboard/`. Dashboard assets and API requests resolve relative to that path, so the same image works directly and behind the proxy.
+
 The dashboard shows daily metric charts and values, workouts, individual sleep intervals, and import history. Filters are stored in the URL; health records and credentials are never persisted to browser storage. Select one export source at a time to avoid combining duplicate data across devices. Date ranges are limited to 366 days. Queries follow pagination and fail visibly rather than presenting incomplete totals.
 
 Daily metric dates remain as exported. Timestamp filters use the browser's timezone and include the entire final calendar day. Sleep records are grouped by their local start date, with overlaps shown separately; no nightly duration total is inferred. Mixed units appear as separate metric series, and missing records appear as gaps, not zero. The overview cards show the latest recorded value within the selected range, not a period total.

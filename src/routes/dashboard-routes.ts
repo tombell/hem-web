@@ -6,7 +6,7 @@ import type { FastifyInstance } from "fastify";
 
 export async function registerDashboardRoutes(server: FastifyInstance): Promise<void> {
   const root = fileURLToPath(new URL("../../packages/dashboard/dist/", import.meta.url));
-  server.get("/dashboard", async (_request, reply) => reply.redirect("/dashboard/"));
+  server.get("/dashboard", async (_request, reply) => reply.redirect("./dashboard/"));
   if (!existsSync(root)) {
     server.get("/dashboard/", async (_request, reply) =>
       reply.code(503).send({ error: { message: "Build the dashboard with pnpm build first" } }),

@@ -52,6 +52,21 @@ async function connect() {
   });
 }
 
+test.each(["/dashboard/", "/hem/dashboard/"])(
+  "keeps API requests under the deployment path at %s",
+  async (path) => {
+    history.replaceState(null, "", path);
+    await connect();
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalled());
+    const prefix = path.slice(0, -"dashboard/".length);
+    for (const [url] of fetcher.mock.calls) {
+      expect(new URL(url, window.location.href).pathname.startsWith(`${prefix}apple-health/`)).toBe(
+        true,
+      );
+    }
+  },
+);
+
 test("connects, displays gaps separately from zero, and clears data on disconnect", async () => {
   await connect();
   await vi.waitFor(async () => {

@@ -70,14 +70,27 @@ test("dashboard credentials must differ from the import credential", () => {
 
 test("serves dashboard assets without changing API or unknown routes", async () => {
   const server = create();
-  expect((await server.inject("/dashboard")).headers.location).toBe("/dashboard/");
+  const redirect = (await server.inject("/dashboard")).headers.location!;
+  for (const prefix of ["", "/hem"]) {
+    expect(new URL(redirect, `http://local${prefix}/dashboard`).pathname).toBe(
+      `${prefix}/dashboard/`,
+    );
+  }
   const response = await server.inject("/dashboard/");
   if (existsSync(new URL("../packages/dashboard/dist/index.html", import.meta.url))) {
     expect(response.statusCode).toBe(200);
     expect(response.headers["content-type"]).toContain("text/html");
     expect(response.headers["content-security-policy"]).toContain("frame-ancestors 'none'");
     const asset = response.body.match(/src="([^"]+\.js)"/)![1];
-    const script = await server.inject(asset);
+    for (const prefix of ["", "/hem"]) {
+      const page = `http://local${prefix}/dashboard/`;
+      for (const match of response.body.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)) {
+        expect(new URL(match[1], page).pathname).toMatch(
+          new RegExp(`^${prefix}/dashboard/assets/`),
+        );
+      }
+    }
+    const script = await server.inject(new URL(asset, "http://local/dashboard/").pathname);
     expect(script.statusCode).toBe(200);
     expect(script.headers["content-type"]).toContain("javascript");
     expect(script.body).not.toContain("write-secret");
