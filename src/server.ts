@@ -5,6 +5,7 @@ import { type AppConfig, loadConfig } from "./config.ts";
 import type { HealthDatabase } from "./db.ts";
 import { openDatabase } from "./db.ts";
 import { registerAppleHealthRoutes } from "./routes/apple-health-routes.ts";
+import { registerDashboardRoutes } from "./routes/dashboard-routes.ts";
 import { registerHealthRoutes } from "./routes/health-routes.ts";
 import { registerNotFoundRoute } from "./routes/not-found-routes.ts";
 import { registerOpenApiRoutes } from "./routes/openapi-routes.ts";
@@ -110,6 +111,7 @@ export function createHealthImportServer({
     registerOpenApiRoutes(routes, config);
     registerHealthRoutes(routes, { db, logger });
     registerAppleHealthRoutes(routes, { config, db, logger });
+    await registerDashboardRoutes(routes);
     registerNotFoundRoute(routes);
   });
 

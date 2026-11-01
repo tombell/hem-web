@@ -9,3 +9,5 @@ data/*.sqlite-*
 
 .env
 .vitest/
+
+**/dist/
