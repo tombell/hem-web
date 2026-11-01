@@ -146,6 +146,11 @@ Application logs are structured JSON and omit request bodies and query parameter
 
 ## Development
 
+[Vite+](https://viteplus.dev/guide/) is installed locally at the workspace root.
+The existing pnpm scripts use its bundled Vitest, Oxlint, and Oxfmt, configured in
+`vite.config.ts`. No global `vp` installation is required. Node remains managed by
+mise, dependencies by pnpm, and typechecking by TypeScript's `tsc`.
+
 ```sh
 pnpm test
 pnpm typecheck
@@ -153,3 +158,13 @@ pnpm lint
 pnpm fmt:check
 pnpm audit --prod
 ```
+
+Use `pnpm fmt` to format files, `pnpm lint:fix` for automatic lint fixes, and
+`pnpm exec vp test watch` to watch tests. `pnpm exec vp check` checks formatting
+and lint; run `pnpm typecheck` separately for TypeScript checks.
+
+The backend runs TypeScript directly in Node, so there is no Vite application
+build step. The Docker image installs only production dependencies and does not
+include Vite+. CI runs the development checks and builds the production image.
+The future dashboard is planned to use Preact, TypeScript, and Tailwind; this
+migration does not add dashboard code or UI dependencies.

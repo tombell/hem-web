@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "start": "node src/server.ts",
-    "fmt": "oxfmt --write .",
-    "fmt:check": "oxfmt --check .",
-    "lint": "oxlint .",
-    "lint:fix": "oxlint --fix .",
-    "test": "vitest run",
+    "fmt": "vp fmt --write .",
+    "fmt:check": "vp fmt --check .",
+    "lint": "vp lint .",
+    "lint:fix": "vp lint --fix .",
+    "test": "vp test run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -22,9 +22,7 @@
     "@types/node": "^24.19.2",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
-    "oxfmt": "^0.75.0",
-    "oxlint": "^1.90.0",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.5"
+    "vite-plus": "catalog:"
   }
 }

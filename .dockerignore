@@ -7,8 +7,7 @@
 !pnpm-lock.yaml
 !pnpm-workspace.yaml
 !tsconfig.json
-!oxlint.config.ts
-!oxfmt.config.ts
+!vite.config.ts
 !README.md
 !src/
 !src/**/*.ts
