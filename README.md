@@ -165,6 +165,6 @@ and lint; run `pnpm typecheck` separately for TypeScript checks.
 
 The backend runs TypeScript directly in Node, so there is no Vite application
 build step. The Docker image installs only production dependencies and does not
-include Vite+. CI runs the development checks and builds the production image.
+include Vite+. CI runs the development checks on pushes to `main`.
 The future dashboard is planned to use Preact, TypeScript, and Tailwind; this
 migration does not add dashboard code or UI dependencies.
