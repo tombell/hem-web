@@ -95,6 +95,10 @@ export function metricSeries(rows: DailyMetric[]) {
   return [...groups.values()].toSorted((a, b) => a.metric.localeCompare(b.metric));
 }
 export const number = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
+/** Hides HealthKit's dimensionless "count" unit, which reads as noise next to a value. */
+export function unitLabel(unit: string): string {
+  return unit === "count" ? "" : unit;
+}
 export function quantity(value: { value: number; unit: string } | null) {
   return value ? `${number.format(value.value)} ${value.unit}` : "—";
 }

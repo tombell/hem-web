@@ -18,6 +18,7 @@ import { dateTime } from "../date-time";
 import { useFilters } from "../hooks/use-filters";
 import { Brand } from "./brand";
 import { Empty } from "./empty";
+import { Icon } from "./icons";
 import { ImportsView } from "./imports-view";
 import { MetricsView } from "./metrics-view";
 import { SleepView } from "./sleep-view";
@@ -25,6 +26,13 @@ import { WorkoutsView } from "./workouts-view";
 
 const views = ["Overview", "Metrics", "Sleep", "Workouts", "Imports"] as const;
 type View = (typeof views)[number];
+const icons = {
+  Overview: "overview",
+  Metrics: "metrics",
+  Sleep: "sleep",
+  Workouts: "workouts",
+  Imports: "imports",
+} as const;
 const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 export function Dashboard({
@@ -108,56 +116,75 @@ export function Dashboard({
   const source = sources.find((row) => row.sourceKey === sourceKey);
   const data = result?.key === key ? result : undefined;
   const error = failure?.key === key ? failure.message : undefined;
+  const today = day(new Date());
+  const activePreset = end === today ? dates.length : 0;
   function preset(days: number) {
     const last = new Date();
     const first = new Date();
     first.setDate(last.getDate() - days + 1);
     update({ start: day(first), end: day(last) });
   }
+  function reload() {
+    setFailure(undefined);
+    setRefresh((n) => n + 1);
+  }
   return (
-    <div class="min-h-screen lg:grid lg:grid-cols-[230px_1fr]">
-      <aside class="border-b border-line bg-white px-5 py-6 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r lg:border-b-0 lg:px-7 lg:py-9">
-        <Brand />
-        <p class="mt-10 hidden text-[10px] font-semibold uppercase tracking-[0.2em] text-muted lg:block">
-          Your dashboard
-        </p>
-        <nav aria-label="Dashboard" class="mt-5 flex gap-1 overflow-x-auto lg:flex-col lg:gap-2">
-          {views.map((item, i) => (
-            <button
-              key={item}
-              aria-current={view === item ? "page" : undefined}
-              onClick={() => update({ view: item })}
-              class={`flex items-center gap-3 px-4 py-3 text-left text-sm whitespace-nowrap ${view === item ? "bg-ink font-medium text-white" : "text-muted hover:bg-paper"}`}
-            >
-              <span class="text-xs opacity-60">0{i + 1}</span>
-              {item}
-            </button>
-          ))}
-        </nav>
-        <div class="mt-6 lg:mt-auto">
-          <p class="hidden text-xs leading-relaxed text-muted lg:block">
-            A private view of
-            <br />
-            your everyday health.
-          </p>
+    <div class="min-h-screen lg:grid lg:grid-cols-[232px_1fr]">
+      <aside class="border-b border-line bg-surface px-5 pt-5 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r lg:border-b-0 lg:px-4 lg:py-6">
+        <div class="flex items-center justify-between lg:px-1">
+          <Brand />
           <button
-            class="mt-4 text-sm text-muted underline underline-offset-4"
+            class="flex items-center gap-2 text-sm tracking-wider text-muted uppercase hover:text-accent lg:hidden"
             onClick={() => disconnect()}
           >
             Disconnect
           </button>
         </div>
+        <nav
+          aria-label="Dashboard"
+          class="-mx-5 mt-4 flex gap-px overflow-x-auto px-5 pb-3 lg:mx-0 lg:mt-8 lg:flex-col lg:px-0 lg:pb-0"
+        >
+          {views.map((item, i) => (
+            <button
+              key={item}
+              aria-current={view === item ? "page" : undefined}
+              onClick={() => update({ view: item })}
+              class={`flex items-center gap-2.5 border-l-2 px-3 py-1.5 text-left text-sm tracking-[0.15em] whitespace-nowrap uppercase ${view === item ? "glow border-accent bg-accent-soft text-accent" : "border-transparent text-muted hover:bg-accent-soft/50 hover:text-ink"}`}
+            >
+              <span aria-hidden="true" class="text-xs opacity-60">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <Icon name={icons[item]} class="size-3.5" />
+              {item}
+            </button>
+          ))}
+        </nav>
+        <div class="mt-auto hidden border-t border-line pt-4 lg:block">
+          <Status />
+          <p class="mt-3 px-3 text-xs leading-relaxed text-muted">
+            Recorded data from your selected source. No inferred health scores.
+          </p>
+          <button
+            class="mt-2 flex w-full items-center gap-2.5 px-3 py-1.5 text-sm tracking-[0.15em] text-muted uppercase hover:text-danger"
+            onClick={() => disconnect()}
+          >
+            <Icon name="logout" class="size-3.5" />
+            Disconnect
+          </button>
+        </div>
       </aside>
-      <main id="main" class="mx-auto w-full max-w-[1500px] px-5 py-8 sm:px-10 lg:py-10">
-        <header class="flex flex-wrap items-start justify-between gap-4">
+      <main id="main" class="mx-auto w-full max-w-[1400px] px-5 py-6 sm:px-8 lg:px-8 lg:py-8">
+        <header class="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-              Personal health
+            <p class="eyebrow">
+              {"// "}
+              {source ? sourceName(source.source, sources.indexOf(source)) : "Personal health"}
+              {source && <> · Last import {dateTime(source.lastImportedAt)}</>}
             </p>
-            <h1 class="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h1 class="glow cursor mt-1.5 text-xl font-semibold tracking-[0.12em] text-accent uppercase">
               {view === "Overview" ? "Your days, at a glance." : view}
             </h1>
-            <p class="mt-3 subtle">
+            <p class="mt-1 subtle">
               {view === "Overview"
                 ? "Small details. A clearer picture over time."
                 : view === "Metrics"
@@ -169,70 +196,72 @@ export function Dashboard({
                       : "See what arrived and which dates it covers."}
             </p>
           </div>
-          <button
-            class="button"
-            onClick={() => {
-              setFailure(undefined);
-              setRefresh((n) => n + 1);
-            }}
-          >
+          <button class="button" onClick={reload}>
+            <Icon name="refresh" class="size-3.5" />
             Refresh
           </button>
         </header>
         <section
           aria-label="Filters"
-          class="mt-8 flex flex-wrap items-end gap-4 rounded-2xl border border-line bg-white p-4"
+          class="mt-5 flex flex-wrap items-center gap-2 border border-line bg-surface p-2"
         >
-          <label class="min-w-40 flex-1 text-xs font-medium text-muted">
-            Source
-            <select
-              class="mt-1.5 block w-full"
-              value={sourceKey}
-              onChange={(e) => update({ source: e.currentTarget.value })}
-            >
-              {sources.map((row, i) => (
-                <option key={row.sourceKey} value={row.sourceKey}>
-                  {sourceName(row.source, i)} · {i + 1}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label class="text-xs font-medium text-muted">
-            From
-            <input
-              class="mt-1.5 block"
-              type="date"
-              value={start}
-              onInput={(e) => update({ start: e.currentTarget.value })}
-            />
-          </label>
-          <label class="text-xs font-medium text-muted">
-            To
-            <input
-              class="mt-1.5 block"
-              type="date"
-              value={end}
-              onInput={(e) => update({ end: e.currentTarget.value })}
-            />
-          </label>
-          <div class="flex gap-2">
-            <button class="button" onClick={() => preset(7)}>
-              7 days
-            </button>
-            <button class="button" onClick={() => preset(30)}>
-              30 days
-            </button>
+          {sources.length > 1 && (
+            <label class="flex min-w-48 flex-1 items-center gap-2 text-xs font-medium text-muted">
+              <span class="pl-1">Source</span>
+              <select
+                class="w-full min-w-0"
+                value={sourceKey}
+                onChange={(e) => update({ source: e.currentTarget.value })}
+              >
+                {sources.map((row, i) => (
+                  <option key={row.sourceKey} value={row.sourceKey}>
+                    {sourceName(row.source, i)} · {i + 1}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <div role="group" aria-label="Date range presets" class="flex border border-line">
+            {[7, 30, 90].map((days) => (
+              <button
+                key={days}
+                aria-pressed={activePreset === days}
+                class={`h-[30px] border-l border-line px-3 text-sm tracking-wider whitespace-nowrap uppercase first:border-l-0 ${activePreset === days ? "glow bg-accent-soft text-accent" : "text-muted hover:text-ink"}`}
+                onClick={() => preset(days)}
+              >
+                {days} days
+              </button>
+            ))}
+          </div>
+          <div class="flex flex-wrap items-center gap-2 text-xs font-medium text-muted sm:ml-auto">
+            <label class="flex items-center gap-2">
+              <span class="sr-only sm:not-sr-only">From</span>
+              <input
+                type="date"
+                value={start}
+                max={end}
+                onInput={(e) => update({ start: e.currentTarget.value })}
+              />
+            </label>
+            <span aria-hidden="true">–</span>
+            <label class="flex items-center gap-2">
+              <span class="sr-only">To</span>
+              <input
+                type="date"
+                value={end}
+                min={start}
+                onInput={(e) => update({ end: e.currentTarget.value })}
+              />
+            </label>
           </div>
         </section>
-        <div class="mt-3 flex flex-wrap justify-between gap-2 text-xs text-muted">
-          <p>
-            {view === "Overview" || view === "Metrics"
-              ? "Dates as recorded in the export"
-              : `Times shown in ${zone}`}
-          </p>
-          <p>{source ? `Last import ${dateTime(source.lastImportedAt)}` : "No imports yet"}</p>
-        </div>
-        <div class="mt-7" aria-live="polite">
+        <p class="mt-2 text-xs text-muted">
+          {view === "Overview" || view === "Metrics"
+            ? "Dates as recorded in the export."
+            : `Times shown in ${zone}.`}
+          {!source && " No imports yet."}
+        </p>
+        <div class="mt-5" aria-live="polite">
           {!sourceKey ? (
             <Empty
               title="Your data will appear here"
@@ -245,22 +274,16 @@ export function Dashboard({
             />
           ) : error ? (
             <div class="panel">
-              <p role="alert" class="text-red-700">
+              <p role="alert" class="text-danger">
                 {error}
               </p>
-              <button
-                class="button mt-4"
-                onClick={() => {
-                  setFailure(undefined);
-                  setRefresh((n) => n + 1);
-                }}
-              >
+              <button class="button mt-4" onClick={reload}>
                 Try again
               </button>
             </div>
           ) : !data ? (
-            <div class="panel text-muted" role="status">
-              Loading your health data…
+            <div class="panel flex items-center gap-3 text-muted" role="status">
+              <span class="cursor">Loading your health data…</span>
             </div>
           ) : (
             <>
@@ -270,7 +293,6 @@ export function Dashboard({
                   dates={dates}
                   overview={view === "Overview"}
                   metric={params.get("metric")}
-                  onOpenMetric={(metric) => update({ metric, view: "Metrics" })}
                   onSelectMetric={(metric) => update({ metric })}
                 />
               )}
@@ -288,10 +310,33 @@ export function Dashboard({
             </>
           )}
         </div>
-        <footer class="mt-10 border-t border-line pt-5 text-xs text-muted">
-          Hem · Recorded data from your selected source. No inferred health scores.
+        <footer class="mt-8 border-t border-line pt-4 text-xs text-muted lg:hidden">
+          Recorded data from your selected source. No inferred health scores.
         </footer>
       </main>
+    </div>
+  );
+}
+
+/** Link status and a ticking local clock for the sidebar footer. */
+function Status() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  return (
+    <div class="flex items-center justify-between px-3 text-xs tracking-[0.15em] text-muted uppercase">
+      <span class="flex items-center gap-2">
+        <span
+          aria-hidden="true"
+          class="size-1.5 animate-pulse bg-accent shadow-[0_0_6px_var(--color-accent)]"
+        />
+        Link secure
+      </span>
+      <time class="tabular-nums" dateTime={now.toISOString()}>
+        {now.toLocaleTimeString(undefined, { hour12: false })}
+      </time>
     </div>
   );
 }
