@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/server.ts",
+    "start:sample": "HERMES_HEALTH_DB_PATH=data/sample.sqlite node src/server.ts",
+    "seed:sample": "node scripts/seed-sample.ts",
     "fmt": "vp fmt --write .",
     "fmt:check": "vp fmt --check .",
     "lint": "vp lint .",
