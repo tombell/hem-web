@@ -10,7 +10,7 @@ export function DataTable({
 }) {
   return (
     <div class="mt-3 overflow-x-auto">
-      <table class="w-full">
+      <table class="w-full border-collapse">
         <thead>
           <tr>
             {headings.map((heading) => (

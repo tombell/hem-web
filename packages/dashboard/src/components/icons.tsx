@@ -23,9 +23,9 @@ export function Icon({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      stroke-width="1.75"
-      stroke-linecap="square"
-      stroke-linejoin="miter"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
       class={`shrink-0 ${className}`}
     >
       <path d={paths[name]} />
