@@ -33,6 +33,14 @@ const icons = {
   Workouts: "workouts",
   Imports: "imports",
 } as const;
+/** Each view has its own highlighter, used for the nav swipe and page title. */
+const colours = {
+  Overview: "hl-yellow",
+  Metrics: "hl-pink",
+  Sleep: "hl-blue",
+  Workouts: "hl-green",
+  Imports: "hl-orange",
+} as const;
 const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 export function Dashboard({
@@ -130,45 +138,47 @@ export function Dashboard({
   }
   return (
     <div class="min-h-screen lg:grid lg:grid-cols-[232px_1fr]">
-      <aside class="border-b border-line bg-surface px-5 pt-5 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r lg:border-b-0 lg:px-4 lg:py-6">
+      <aside class="border-b-2 border-dashed border-line bg-surface/85 px-5 pt-5 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r-2 lg:border-b-0 lg:border-solid lg:border-r-margin lg:px-4 lg:py-6">
         <div class="flex items-center justify-between lg:px-1">
           <Brand />
           <button
-            class="flex items-center gap-2 text-sm tracking-wider text-muted uppercase hover:text-accent lg:hidden"
+            class="flex items-center gap-1.5 font-hand text-lg font-semibold text-muted hover:text-danger lg:hidden"
             onClick={() => disconnect()}
           >
+            <Icon name="logout" class="size-4" />
             Disconnect
           </button>
         </div>
         <nav
           aria-label="Dashboard"
-          class="-mx-5 mt-4 flex gap-px overflow-x-auto px-5 pb-3 lg:mx-0 lg:mt-8 lg:flex-col lg:px-0 lg:pb-0"
+          class="-mx-5 mt-3 flex gap-1 overflow-x-auto px-5 pt-1 pb-3 lg:mx-0 lg:mt-8 lg:flex-col lg:gap-1.5 lg:px-0 lg:pb-0"
         >
-          {views.map((item, i) => (
+          {views.map((item) => (
             <button
               key={item}
               aria-current={view === item ? "page" : undefined}
               onClick={() => update({ view: item })}
-              class={`flex items-center gap-2.5 border-l-2 px-3 py-1.5 text-left text-sm tracking-[0.15em] whitespace-nowrap uppercase ${view === item ? "glow border-accent bg-accent-soft text-accent" : "border-transparent text-muted hover:bg-accent-soft/50 hover:text-ink"}`}
+              class={`group flex shrink-0 items-center gap-2.5 px-3 py-1 text-left font-hand text-2xl whitespace-nowrap ${view === item ? "font-bold text-ink" : "font-medium text-muted hover:text-ink"}`}
             >
-              <span aria-hidden="true" class="text-xs opacity-60">
-                {String(i + 1).padStart(2, "0")}
+              <Icon name={icons[item]} class="size-4.5" />
+              <span
+                class={`hl ${colours[item]} ${view === item ? "" : "before:opacity-0 group-hover:before:opacity-45"}`}
+              >
+                {item}
               </span>
-              <Icon name={icons[item]} class="size-3.5" />
-              {item}
             </button>
           ))}
         </nav>
-        <div class="mt-auto hidden border-t border-line pt-4 lg:block">
+        <div class="mt-auto hidden border-t-2 border-dashed border-line pt-4 lg:block">
           <Status />
-          <p class="mt-3 px-3 text-xs leading-relaxed text-muted">
+          <p class="mt-3 px-3 font-hand text-lg leading-snug text-muted">
             Recorded data from your selected source. No inferred health scores.
           </p>
           <button
-            class="mt-2 flex w-full items-center gap-2.5 px-3 py-1.5 text-sm tracking-[0.15em] text-muted uppercase hover:text-danger"
+            class="mt-2 flex w-full items-center gap-2.5 px-3 py-1.5 font-hand text-xl font-semibold text-muted hover:text-danger"
             onClick={() => disconnect()}
           >
-            <Icon name="logout" class="size-3.5" />
+            <Icon name="logout" class="size-4" />
             Disconnect
           </button>
         </div>
@@ -177,14 +187,15 @@ export function Dashboard({
         <header class="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p class="eyebrow">
-              {"// "}
               {source ? sourceName(source.source, sources.indexOf(source)) : "Personal health"}
               {source && <> · Last import {dateTime(source.lastImportedAt)}</>}
             </p>
-            <h1 class="glow cursor mt-1.5 text-xl font-semibold tracking-[0.12em] text-accent uppercase">
-              {view === "Overview" ? "Your days, at a glance." : view}
+            <h1 class="mt-1 font-hand text-4xl leading-tight font-bold sm:text-5xl">
+              <span class={`hl ${colours[view]}`}>
+                {view === "Overview" ? "Your days, at a glance." : view}
+              </span>
             </h1>
-            <p class="mt-1 subtle">
+            <p class="mt-1 text-muted">
               {view === "Overview"
                 ? "Small details. A clearer picture over time."
                 : view === "Metrics"
@@ -197,19 +208,19 @@ export function Dashboard({
             </p>
           </div>
           <button class="button" onClick={reload}>
-            <Icon name="refresh" class="size-3.5" />
+            <Icon name="refresh" class="size-4" />
             Refresh
           </button>
         </header>
         <section
           aria-label="Filters"
-          class="mt-5 flex flex-wrap items-center gap-2 border border-line bg-surface p-2"
+          class="sketch mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5"
         >
           {sources.length > 1 && (
-            <label class="flex min-w-48 flex-1 items-center gap-2 text-xs font-medium text-muted">
+            <label class="flex min-w-48 flex-1 items-center gap-2 font-hand text-lg font-semibold text-muted">
               <span class="pl-1">Source</span>
               <select
-                class="w-full min-w-0"
+                class="w-full min-w-0 font-sans"
                 value={sourceKey}
                 onChange={(e) => update({ source: e.currentTarget.value })}
               >
@@ -221,23 +232,24 @@ export function Dashboard({
               </select>
             </label>
           )}
-          <div role="group" aria-label="Date range presets" class="flex border border-line">
+          <div role="group" aria-label="Date range presets" class="flex gap-1">
             {[7, 30, 90].map((days) => (
               <button
                 key={days}
                 aria-pressed={activePreset === days}
-                class={`h-[30px] border-l border-line px-3 text-sm tracking-wider whitespace-nowrap uppercase first:border-l-0 ${activePreset === days ? "glow bg-accent-soft text-accent" : "text-muted hover:text-ink"}`}
+                class={`h-9 px-3 font-hand text-xl whitespace-nowrap ${activePreset === days ? "circled font-bold text-ink" : "font-medium text-muted hover:text-ink"}`}
                 onClick={() => preset(days)}
               >
                 {days} days
               </button>
             ))}
           </div>
-          <div class="flex flex-wrap items-center gap-2 text-xs font-medium text-muted sm:ml-auto">
+          <div class="flex flex-wrap items-center gap-2 font-hand text-lg font-semibold text-muted sm:ml-auto">
             <label class="flex items-center gap-2">
               <span class="sr-only sm:not-sr-only">From</span>
               <input
                 type="date"
+                class="font-sans"
                 value={start}
                 max={end}
                 onInput={(e) => update({ start: e.currentTarget.value })}
@@ -248,6 +260,7 @@ export function Dashboard({
               <span class="sr-only">To</span>
               <input
                 type="date"
+                class="font-sans"
                 value={end}
                 min={start}
                 onInput={(e) => update({ end: e.currentTarget.value })}
@@ -255,13 +268,13 @@ export function Dashboard({
             </label>
           </div>
         </section>
-        <p class="mt-2 text-xs text-muted">
+        <p class="mt-2 px-1 text-xs text-muted">
           {view === "Overview" || view === "Metrics"
             ? "Dates as recorded in the export."
             : `Times shown in ${zone}.`}
           {!source && " No imports yet."}
         </p>
-        <div class="mt-5" aria-live="polite">
+        <div class="mt-6" aria-live="polite">
           {!sourceKey ? (
             <Empty
               title="Your data will appear here"
@@ -274,7 +287,7 @@ export function Dashboard({
             />
           ) : error ? (
             <div class="panel">
-              <p role="alert" class="text-danger">
+              <p role="alert" class="font-semibold text-danger">
                 {error}
               </p>
               <button class="button mt-4" onClick={reload}>
@@ -282,8 +295,9 @@ export function Dashboard({
               </button>
             </div>
           ) : !data ? (
-            <div class="panel flex items-center gap-3 text-muted" role="status">
-              <span class="cursor">Loading your health data…</span>
+            <div class="panel flex items-center gap-3 font-hand text-2xl text-muted" role="status">
+              <Pencil />
+              <span>Loading your health data…</span>
             </div>
           ) : (
             <>
@@ -310,11 +324,28 @@ export function Dashboard({
             </>
           )}
         </div>
-        <footer class="mt-8 border-t border-line pt-4 text-xs text-muted lg:hidden">
+        <footer class="mt-10 border-t-2 border-dashed border-line pt-4 font-hand text-lg text-muted lg:hidden">
           Recorded data from your selected source. No inferred health scores.
         </footer>
       </main>
     </div>
+  );
+}
+
+/** A pencil that scribbles while data loads; still when motion is reduced. */
+function Pencil() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 48 24" class="h-6 w-12 text-marker-blue">
+      <path
+        class="motion-safe:animate-[scribble_1.4s_linear_infinite]"
+        d="M2 16c4-10 8-10 10 0s6 10 10 0 6-10 10 0 6 10 10 0"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-dasharray="90"
+      />
+    </svg>
   );
 }
 
@@ -326,11 +357,11 @@ function Status() {
     return () => clearInterval(timer);
   }, []);
   return (
-    <div class="flex items-center justify-between px-3 text-xs tracking-[0.15em] text-muted uppercase">
+    <div class="flex items-center justify-between px-3 text-sm text-muted">
       <span class="flex items-center gap-2">
         <span
           aria-hidden="true"
-          class="size-1.5 animate-pulse bg-accent shadow-[0_0_6px_var(--color-accent)]"
+          class="size-2.5 rounded-full border-2 border-marker-green bg-hl-green"
         />
         Link secure
       </span>

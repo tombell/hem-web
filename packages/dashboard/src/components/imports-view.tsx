@@ -7,8 +7,10 @@ import { Empty } from "./empty";
 export function ImportsView({ rows }: { rows: Import[] }) {
   return rows.length ? (
     <section class="panel">
-      <h2 class="text-lg tracking-[0.12em] text-accent uppercase">
-        Imports overlapping this range
+      <h2 class="font-hand text-3xl font-bold">
+        <span class="underline-drawn [--ul:var(--color-marker-orange)]">
+          Imports overlapping this range
+        </span>
       </h2>
       <DataTable headings={["Imported", "Coverage", "Export timezone", "Generated"]}>
         {rows.map((row) => (

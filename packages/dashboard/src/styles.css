@@ -1,84 +1,78 @@
 @import "tailwindcss";
+@import "@fontsource-variable/caveat";
+@import "@fontsource-variable/nunito";
 
 /*
- * Terminal theme: phosphor green on near-black, monospace throughout, with
- * scanlines, soft glow, and bracketed panel corners. Dark only by design.
+ * Notebook theme: graphite ink on grid paper, handwritten headings, and thick
+ * highlighter swipes in five marker colours. Hand-drawn shapes are SVG masks,
+ * so their colour always comes from a theme token.
  */
 @theme {
-  --font-sans:
-    "JetBrains Mono", "SF Mono", "Cascadia Code", ui-monospace, Menlo, Consolas, monospace;
-  --font-mono: var(--font-sans);
-  /* A compact type scale: the dashboard reads at 11–12px, headings stay small. */
-  --text-xs: 0.625rem;
-  --text-sm: 0.6875rem;
-  --text-base: 0.75rem;
-  --text-lg: 0.8125rem;
-  --text-xl: 0.9375rem;
-  --text-2xl: 1.25rem;
-  --color-ink: #c3f5dc;
-  --color-muted: #4f8a72;
-  --color-paper: #030807;
-  --color-surface: #07110e;
-  --color-line: #143a2c;
-  --color-accent: #39ff9c;
-  --color-accent-soft: #0b2a1d;
-  --color-on-accent: #01120a;
-  --color-danger: #ff4d6d;
-  --color-sleep-deep: #2f6bff;
-  --color-sleep-core: #00d9ff;
-  --color-sleep-rem: #c64dff;
-  --color-sleep-awake: #ffb000;
-  --color-sleep-bed: #12392d;
-  --animate-blink: blink 1.1s steps(1) infinite;
+  --font-sans: "Nunito Variable", "Nunito", ui-rounded, system-ui, sans-serif;
+  --font-hand: "Caveat Variable", "Caveat", "Segoe Print", "Bradley Hand", cursive;
+  --color-ink: #23283a;
+  --color-muted: #575e70;
+  --color-paper: #fbf7ee;
+  --color-surface: #fffdf7;
+  --color-line: #d8d0bf;
+  --color-grid: #dfe8f1;
+  --color-margin: #f2b8b5;
+  --color-accent: #2453c7;
+  --color-danger: #c2255c;
+  /* Highlighters sit behind ink text, so they stay light. */
+  --color-hl-yellow: #ffe45c;
+  --color-hl-pink: #ffa3d1;
+  --color-hl-green: #9ef0b4;
+  --color-hl-blue: #9fd8ff;
+  --color-hl-orange: #ffc078;
 }
 
-@keyframes blink {
-  50% {
-    opacity: 0;
-  }
+/* Markers draw lines and marks, so each keeps 3:1 against the paper. Static,
+   because charts pick a marker by name at runtime. */
+@theme static {
+  --color-marker-blue: #2453c7;
+  --color-marker-pink: #d6336c;
+  --color-marker-green: #1e8a4c;
+  --color-marker-orange: #d9480f;
+  --color-marker-purple: #7b3fe4;
+  --color-sleep-deep: var(--color-marker-blue);
+  --color-sleep-core: #1592a8;
+  --color-sleep-rem: var(--color-marker-purple);
+  --color-sleep-awake: var(--color-marker-orange);
+  --color-sleep-bed: #f5c400;
 }
 
 @layer base {
   :root {
-    color-scheme: dark;
+    color-scheme: light;
+    --mask-swipe: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 40' preserveAspectRatio='none'%3E%3Cpath d='M4 10C40 4 92 8 140 5s52-2 57 4l-3 8 5 8-5 9c-44 3-92 1-136 4S12 37 5 33l3-8-6-8z'/%3E%3C/svg%3E");
+    --mask-underline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 14' preserveAspectRatio='none'%3E%3Cpath d='M3 9c40-6 78 2 118-3s58-2 76 1' fill='none' stroke='%23000' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E");
+    --mask-circle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 50' preserveAspectRatio='none'%3E%3Cpath d='M112 5C160 3 197 14 195 26c-2 13-52 21-100 20C42 45 4 37 5 23 6 11 46 4 96 4c34 0 62 3 80 9' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
+    --mask-scribble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M-2 4 4-2M-1 11 11-1M8 14l6-6' stroke='%23000' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+    --sketch-radius: 255px 14px 225px 16px / 16px 225px 14px 255px;
   }
   body {
-    @apply m-0 bg-paper text-base text-ink antialiased;
-    background-image: radial-gradient(
-      ellipse at 50% 0%,
-      color-mix(in oklab, var(--color-accent) 7%, transparent),
-      transparent 60%
-    );
-    background-attachment: fixed;
-  }
-  /* CRT scanlines and a faint vignette, above everything but never interactive. */
-  body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 50;
-    pointer-events: none;
-    background:
-      repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.18) 0 1px, transparent 1px 3px),
-      radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.55));
+    @apply m-0 bg-paper text-[0.9375rem] text-ink antialiased;
+    /* Grid paper: fine squares with a stronger line every fifth square. */
+    background-image:
+      linear-gradient(var(--color-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
+    background-size: 24px 24px;
   }
   ::selection {
-    @apply bg-accent text-on-accent;
-  }
-  button,
-  input,
-  select {
-    border-radius: 0;
+    @apply bg-hl-yellow text-ink;
   }
   button {
-    @apply cursor-pointer disabled:cursor-wait disabled:opacity-40;
+    @apply cursor-pointer disabled:cursor-wait disabled:opacity-50;
   }
   :focus-visible {
-    @apply outline-1 outline-offset-1 outline-accent;
+    outline: 2.5px dashed var(--color-accent);
+    outline-offset: 3px;
   }
   input,
   select {
-    @apply h-8 border border-line bg-paper px-2.5 text-sm text-ink caret-accent;
+    @apply h-9 border-2 border-ink/70 bg-surface px-3 text-sm text-ink;
+    border-radius: var(--sketch-radius);
   }
   input::placeholder {
     @apply text-muted;
@@ -86,87 +80,219 @@
   input:focus,
   select:focus {
     @apply border-accent;
-    box-shadow: 0 0 10px color-mix(in oklab, var(--color-accent) 25%, transparent);
+    box-shadow: 0 0 0 4px var(--color-hl-blue);
+  }
+  input:focus-visible,
+  select:focus-visible {
+    outline: none;
   }
   th {
-    @apply px-3 py-2 text-left text-xs font-medium tracking-[0.15em] text-muted uppercase;
+    @apply px-3 pt-2 pb-1 text-left font-hand text-lg font-semibold text-muted;
+  }
+  thead tr {
+    border-bottom: 2px solid var(--color-ink);
   }
   td {
-    @apply border-t border-line px-3 py-2 text-sm tabular-nums;
+    @apply px-3 py-2 text-sm tabular-nums;
+    border-top: 1.5px dashed var(--color-line);
+  }
+  thead + tbody tr:first-child td {
+    border-top: 0;
   }
   tbody tr:hover td {
-    @apply bg-accent-soft;
+    background: color-mix(in oklab, var(--color-hl-yellow) 40%, transparent);
   }
   summary {
-    @apply cursor-pointer text-sm tracking-wider text-accent uppercase;
+    @apply inline-block cursor-pointer font-hand text-xl font-semibold text-accent;
+    list-style: none;
   }
-  summary::marker {
-    content: "[+] ";
+  summary::-webkit-details-marker {
+    display: none;
   }
-  details[open] > summary::marker {
-    content: "[-] ";
+  summary::before {
+    content: "+";
+    display: inline-block;
+    width: 1.1em;
+    font-weight: 700;
+  }
+  details[open] > summary::before {
+    content: "–";
   }
 }
+
 @layer components {
-  /* Bordered panel with accent corner brackets drawn over the border. */
+  /* A sheet of paper with a hand-drawn border and a soft offset shadow. */
   .panel {
-    @apply relative border border-line bg-surface/80 p-4;
+    @apply relative border-2 border-ink bg-surface p-4 sm:p-5;
+    border-radius: var(--sketch-radius);
+    box-shadow: 4px 5px 0 color-mix(in oklab, var(--color-ink) 12%, transparent);
   }
-  .panel::before {
+  /* A second, slightly offset pencil pass over the border. */
+  .panel::before,
+  .sketch::before,
+  .button::before {
     content: "";
     position: absolute;
-    inset: -1px;
+    inset: -4px -2px -2px -5px;
+    border: 1.5px solid color-mix(in oklab, var(--color-ink) 35%, transparent);
+    border-radius: 14px 225px 16px 255px / 255px 16px 225px 14px;
     pointer-events: none;
-    --c: var(--color-accent);
-    background:
-      linear-gradient(var(--c), var(--c)) top left / 10px 1px,
-      linear-gradient(var(--c), var(--c)) top left / 1px 10px,
-      linear-gradient(var(--c), var(--c)) top right / 10px 1px,
-      linear-gradient(var(--c), var(--c)) top right / 1px 10px,
-      linear-gradient(var(--c), var(--c)) bottom left / 10px 1px,
-      linear-gradient(var(--c), var(--c)) bottom left / 1px 10px,
-      linear-gradient(var(--c), var(--c)) bottom right / 10px 1px,
-      linear-gradient(var(--c), var(--c)) bottom right / 1px 10px;
-    background-repeat: no-repeat;
+  }
+  .sketch,
+  .button {
+    @apply relative border-2 border-ink bg-surface;
+    border-radius: var(--sketch-radius);
+  }
+  /* A strip of masking tape stuck across the top edge. */
+  .tape::after {
+    content: "";
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    width: 84px;
+    height: 22px;
+    translate: -50% 0;
+    rotate: -3deg;
+    background: color-mix(in oklab, var(--color-hl-yellow) 55%, white);
+    opacity: 0.85;
+    mask: var(--mask-swipe) 0 0 / 100% 100% no-repeat;
+    pointer-events: none;
   }
   .subtle {
     @apply text-sm text-muted;
   }
   .eyebrow {
-    @apply text-xs tracking-[0.2em] text-muted uppercase;
+    @apply font-hand text-xl font-medium text-muted;
   }
-  .glow {
-    text-shadow: 0 0 8px color-mix(in oklab, var(--color-accent) 60%, transparent);
+  .hand {
+    @apply font-hand font-semibold;
   }
-  .glow-line {
-    filter: drop-shadow(0 0 3px color-mix(in oklab, var(--color-accent) 80%, transparent));
+
+  /* Thick highlighter swipe behind inline text. Set --hl to change colour. */
+  .hl {
+    position: relative;
+    isolation: isolate;
+    --hl: var(--color-hl-yellow);
   }
-  .cursor::after {
+  .hl::before {
     content: "";
-    display: inline-block;
-    width: 0.55em;
-    height: 1em;
-    margin-left: 0.2em;
-    vertical-align: -0.12em;
-    @apply animate-blink bg-accent;
+    position: absolute;
+    inset: 0.18em -0.3em 0.02em -0.25em;
+    z-index: -1;
+    background: var(--hl);
+    mask: var(--mask-swipe) 0 0 / 100% 100% no-repeat;
+    rotate: -1.2deg;
   }
+  .hl-yellow {
+    --hl: var(--color-hl-yellow);
+  }
+  .hl-pink {
+    --hl: var(--color-hl-pink);
+  }
+  .hl-green {
+    --hl: var(--color-hl-green);
+  }
+  .hl-blue {
+    --hl: var(--color-hl-blue);
+  }
+  .hl-orange {
+    --hl: var(--color-hl-orange);
+  }
+
+  /* Hand-drawn marker underline. Set --ul to change colour. */
+  .underline-drawn {
+    position: relative;
+    --ul: var(--color-marker-pink);
+  }
+  .underline-drawn::after {
+    content: "";
+    position: absolute;
+    left: -0.1em;
+    right: -0.15em;
+    bottom: -0.32em;
+    height: 0.42em;
+    background: var(--ul);
+    mask: var(--mask-underline) 0 0 / 100% 100% no-repeat;
+    pointer-events: none;
+  }
+
+  /* Hand-drawn loop around the element. */
+  .circled {
+    position: relative;
+    --circle: var(--color-marker-pink);
+  }
+  .circled::after {
+    content: "";
+    position: absolute;
+    inset: -7px -9px -6px -8px;
+    background: var(--circle);
+    mask: var(--mask-circle) 0 0 / 100% 100% no-repeat;
+    pointer-events: none;
+  }
+
+  /* Pencil scribble for missing days. */
   .hatch {
-    background-image: repeating-linear-gradient(
-      135deg,
-      var(--color-line) 0 1px,
-      transparent 1px 5px
-    );
+    background: color-mix(in oklab, var(--color-muted) 70%, transparent);
+    mask: var(--mask-scribble) 0 0 / 8px 8px repeat;
   }
+
   .button {
-    @apply inline-flex h-8 items-center gap-2 border border-line bg-paper px-3 text-sm tracking-wider text-ink uppercase hover:border-accent hover:text-accent;
+    @apply inline-flex h-9 items-center gap-2 px-4 font-hand text-lg font-semibold text-ink;
+    transition:
+      rotate 120ms ease,
+      background-color 120ms ease;
+  }
+  .button:hover {
+    @apply bg-hl-yellow/70;
   }
   .primary {
-    @apply h-9 border border-accent bg-accent/10 px-4 text-sm tracking-[0.2em] text-accent uppercase hover:bg-accent hover:text-on-accent;
+    @apply relative h-11 border-2 border-ink bg-hl-pink px-5 font-hand text-2xl font-bold text-ink;
+    border-radius: var(--sketch-radius);
+    box-shadow: 3px 4px 0 var(--color-ink);
+    transition:
+      translate 100ms ease,
+      box-shadow 100ms ease;
+  }
+  .primary:hover:not(:disabled) {
+    @apply bg-hl-yellow;
+  }
+  .primary:active:not(:disabled) {
+    translate: 2px 3px;
+    box-shadow: 1px 1px 0 var(--color-ink);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .button:hover {
+    rotate: -1.5deg;
+  }
+  .wiggle:hover {
+    animation: wiggle 400ms ease-in-out;
+  }
+  @keyframes wiggle {
+    25% {
+      rotate: -2deg;
+    }
+    75% {
+      rotate: 1.5deg;
+    }
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cursor::after {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@keyframes scribble {
+  from {
+    stroke-dashoffset: 180;
+  }
+  to {
+    stroke-dashoffset: 0;
   }
 }
