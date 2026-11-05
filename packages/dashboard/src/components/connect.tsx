@@ -20,15 +20,13 @@ export function Connect({
     <main class="grid min-h-screen place-items-center p-6">
       <div class="w-full max-w-md">
         <Brand />
-        <p class="mt-10 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
-          Your health, in view
-        </p>
-        <h1 class="mt-3 text-4xl font-semibold tracking-tight">
+        <p class="eyebrow mt-10 text-accent">// Secure read-only link</p>
+        <h1 class="glow cursor mt-3 text-2xl font-semibold tracking-wide text-accent uppercase">
           A little perspective
           <br />
           on your everyday.
         </h1>
-        <p class="mt-4 leading-relaxed text-muted">
+        <p class="mt-3 leading-relaxed text-muted">
           Explore the health data you’ve imported from Hem.
         </p>
         <form
@@ -70,7 +68,7 @@ export function Connect({
             Your token stays in this tab’s memory. Reloading or disconnecting clears it.
           </p>
           {error && (
-            <p role="alert" class="text-sm text-red-700">
+            <p role="alert" class="text-sm text-danger">
               {error}
             </p>
           )}

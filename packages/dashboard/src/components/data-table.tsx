@@ -9,7 +9,7 @@ export function DataTable({
   children: ComponentChildren;
 }) {
   return (
-    <div class="mt-4 overflow-x-auto">
+    <div class="mt-3 overflow-x-auto">
       <table class="w-full">
         <thead>
           <tr>
