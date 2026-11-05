@@ -7,7 +7,9 @@ import { Empty } from "./empty";
 export function ImportsView({ rows }: { rows: Import[] }) {
   return rows.length ? (
     <section class="panel">
-      <h2 class="text-lg font-semibold">Imports overlapping this range</h2>
+      <h2 class="text-lg tracking-[0.12em] text-accent uppercase">
+        Imports overlapping this range
+      </h2>
       <DataTable headings={["Imported", "Coverage", "Export timezone", "Generated"]}>
         {rows.map((row) => (
           <tr key={row.id}>
