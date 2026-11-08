@@ -55,6 +55,7 @@ Operational endpoints do not require authentication:
 ## Dashboard
 
 The `@hem/dashboard` workspace package uses Preact, TypeScript, Tailwind CSS, and Vite+.
+API requests use Nano Stores Query with the Preact Nano Stores bindings. Each connection has its own in-memory cache, cleared on disconnect. Changing filters cancels pending requests; Refresh invalidates the current query and source list.
 Set `HERMES_HEALTH_DASHBOARD_TOKEN` to a separate high-entropy secret in `.env`, then build and start:
 
 ```sh

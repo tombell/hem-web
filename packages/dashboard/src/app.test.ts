@@ -92,9 +92,12 @@ test("connects, displays gaps separately from zero, and clears data on disconnec
 test("rejects a bad token without showing dashboard data", async () => {
   fetcher.mockImplementation(async () => new Response(null, { status: 401 }));
   await connect();
-  expect(container.querySelector('[role="alert"]')?.textContent).toContain(
-    "token was not accepted",
-  );
+  await vi.waitFor(async () => {
+    await act(async () => {});
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      "token was not accepted",
+    );
+  });
   expect(container.querySelector("nav")).toBeNull();
 });
 
@@ -183,5 +186,86 @@ test("clears the dashboard when authorization expires during a query", async () 
     );
   });
   expect(container.querySelector("nav")).toBeNull();
+  expect(container.textContent).not.toContain("1,200");
+});
+
+test("reuses metrics between views and refreshes within the cache window", async () => {
+  await connect();
+  await vi.waitFor(async () => {
+    await act(async () => {});
+    expect(container.querySelector("tbody")).not.toBeNull();
+  });
+  expect(fetcher.mock.calls.filter(([url]) => url.includes("/daily-metrics"))).toHaveLength(1);
+  await act(async () => {
+    [...container.querySelectorAll<HTMLButtonElement>("nav button")]
+      .find((button) => button.textContent?.includes("Metrics"))!
+      .click();
+  });
+  expect(container.textContent).toContain("1,200");
+  expect(fetcher.mock.calls.filter(([url]) => url.includes("/daily-metrics"))).toHaveLength(1);
+  await act(async () => {
+    [...container.querySelectorAll("button")]
+      .find((button) => button.textContent === "Refresh")!
+      .click();
+  });
+  await vi.waitFor(() =>
+    expect(fetcher.mock.calls.filter(([url]) => url.includes("/daily-metrics"))).toHaveLength(2),
+  );
+});
+
+test("reconnecting with the same token fetches fresh health records", async () => {
+  await connect();
+  await vi.waitFor(async () => {
+    await act(async () => {});
+    expect(container.textContent).toContain("1,200");
+  });
+  await act(async () => {
+    [...container.querySelectorAll("button")]
+      .find((button) => button.textContent === "Disconnect")!
+      .click();
+  });
+  const original = fetcher.getMockImplementation()!;
+  fetcher.mockImplementation((url, options) =>
+    url.includes("/daily-metrics")
+      ? Promise.resolve(Response.json({ dailyMetrics: [], hasMore: false }))
+      : original(url, options),
+  );
+  await connect();
+  await vi.waitFor(async () => {
+    await act(async () => {});
+    expect(container.textContent).toContain("No daily metrics");
+  });
+  expect(container.textContent).not.toContain("1,200");
+  expect(fetcher.mock.calls.filter(([url]) => url.includes("/daily-metrics"))).toHaveLength(2);
+});
+
+test("disconnect aborts a pending query and ignores its late response", async () => {
+  let resolve!: (response: Response) => void;
+  let signal: AbortSignal | undefined;
+  const original = fetcher.getMockImplementation()!;
+  fetcher.mockImplementation((url, options) => {
+    if (!url.includes("/daily-metrics")) return original(url, options);
+    signal = options.signal ?? undefined;
+    return new Promise<Response>((done) => {
+      resolve = done;
+    });
+  });
+  await connect();
+  await vi.waitFor(() => expect(signal).toBeDefined());
+  await act(async () => {
+    [...container.querySelectorAll("button")]
+      .find((button) => button.textContent === "Disconnect")!
+      .click();
+  });
+  expect(signal?.aborted).toBe(true);
+  await act(async () => {
+    resolve(
+      Response.json({
+        dailyMetrics: [{ id: 1, metric: "steps", unit: "count", value: 1200, date: "2026-11-01" }],
+        hasMore: false,
+      }),
+    );
+  });
+  expect(container.querySelector('input[type="password"]')).not.toBeNull();
   expect(container.textContent).not.toContain("1,200");
 });

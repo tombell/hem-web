@@ -1,21 +1,28 @@
 /** @jsxImportSource preact */
 import { useEffect, useState } from "preact/hooks";
 
-import { collection, type Source } from "../data";
+import type { Source } from "../data";
+import { createSession, type Session } from "../queries";
 import { Brand } from "./brand";
 
 export function Connect({
   onConnect,
   notice,
 }: {
-  onConnect: (token: string, sources: Source[]) => void;
+  onConnect: (session: Session, sources: Source[]) => void;
   notice: string;
 }) {
   const [value, setValue] = useState("");
   const [error, setError] = useState(notice);
   const [busy, setBusy] = useState(false);
-  const [controller] = useState(() => new AbortController());
-  useEffect(() => () => controller.abort(), [controller]);
+  const [pending] = useState(() => ({ session: undefined as Session | undefined }));
+  useEffect(
+    () => () => {
+      pending.session?.dispose();
+      pending.session = undefined;
+    },
+    [pending],
+  );
   return (
     <main class="grid min-h-screen place-items-center p-6">
       <div class="w-full max-w-md">
@@ -39,18 +46,21 @@ export function Connect({
             event.preventDefault();
             setBusy(true);
             setError("");
+            pending.session?.dispose();
+            const session = createSession(value.trim());
+            pending.session = session;
             try {
-              const rows = await collection<Source>(
-                "sources",
-                "sources",
-                value.trim(),
-                {},
-                controller.signal,
-              );
-              onConnect(value.trim(), rows);
+              const result = await session.$sources.fetch();
+              if (pending.session !== session) return;
+              if ("error" in result) throw result.error;
+              pending.session = undefined;
+              onConnect(session, result.data);
             } catch (cause) {
-              if (!controller.signal.aborted)
+              if (pending.session === session) {
                 setError(cause instanceof Error ? cause.message : "Connection failed.");
+                session.dispose();
+                pending.session = undefined;
+              }
             } finally {
               setBusy(false);
             }
