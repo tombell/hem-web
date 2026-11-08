@@ -1,20 +1,23 @@
 /** @jsxImportSource preact */
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 
 import { Connect } from "./components/connect";
 import { Dashboard } from "./components/dashboard";
 import type { Source } from "./data";
+import type { Session } from "./queries";
 
 export function App() {
-  const [token, setToken] = useState("");
+  const [session, setSession] = useState<Session>();
+  useEffect(() => () => session?.dispose(), [session]);
   const [sources, setSources] = useState<Source[]>([]);
   const [notice, setNotice] = useState("");
-  return token ? (
+  return session ? (
     <Dashboard
-      token={token}
+      session={session}
       sources={sources}
       disconnect={(message = "") => {
-        setToken("");
+        session.dispose();
+        setSession(undefined);
         setSources([]);
         setNotice(message);
       }}
@@ -24,7 +27,7 @@ export function App() {
       notice={notice}
       onConnect={(value, rows) => {
         setSources(rows);
-        setToken(value);
+        setSession(value);
         setNotice("");
       }}
     />

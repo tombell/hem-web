@@ -1,10 +1,10 @@
+import { useStore } from "@nanostores/preact";
 /** @jsxImportSource preact */
 import { useEffect, useMemo, useState } from "preact/hooks";
 
 import {
   ApiError,
   sourceName,
-  collection,
   day,
   rangeDays,
   timestampRange,
@@ -16,6 +16,7 @@ import {
 } from "../data";
 import { dateTime } from "../date-time";
 import { useFilters } from "../hooks/use-filters";
+import type { Session } from "../queries";
 import { Brand } from "./brand";
 import { Empty } from "./empty";
 import { Icon } from "./icons";
@@ -44,15 +45,16 @@ const colours = {
 const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 export function Dashboard({
-  token,
+  session,
   sources: initialSources,
   disconnect,
 }: {
-  token: string;
+  session: Session;
   sources: Source[];
   disconnect: (message?: string) => void;
 }) {
-  const [sources, setSources] = useState(initialSources);
+  const sourceResult = useStore(session.$sources);
+  const sources = sourceResult.data ?? initialSources;
   const [params, update] = useFilters();
   const requestedView = params.get("view") as View;
   const view = views.includes(requestedView) ? requestedView : "Overview";
@@ -64,66 +66,35 @@ export function Dashboard({
   weekStart.setDate(weekStart.getDate() - 6);
   const start = params.get("start") ?? day(weekStart);
   const dates = useMemo(() => rangeDays(start, end), [start, end]);
-  const [refresh, setRefresh] = useState(0);
-  const [result, setResult] = useState<{
-    key: string;
-    metrics: DailyMetric[];
-    workouts: Workout[];
-    sleep: Sleep[];
-    imports: Import[];
-  }>();
-  const [failure, setFailure] = useState<{ key: string; message: string }>();
-  const key = JSON.stringify([sourceKey, start, end, view, refresh]);
+  const endpoint = view === "Overview" || view === "Metrics" ? "daily-metrics" : view.toLowerCase();
+  const request = useMemo(() => {
+    if (!sourceKey || !dates.length) return undefined;
+    const filters: Record<string, string> =
+      endpoint === "daily-metrics"
+        ? { sourceKey, startDate: start, endDate: end }
+        : { sourceKey, ...timestampRange(start, end) };
+    return session.query<DailyMetric | Workout | Sleep | Import>(
+      endpoint,
+      endpoint === "daily-metrics" ? "dailyMetrics" : endpoint,
+      filters,
+    );
+  }, [session, sourceKey, start, end, endpoint]);
+  useEffect(() => () => request?.cancel(), [request]);
+  const result = useStore(request?.$store ?? session.$sources);
+  const cause = result.error ?? sourceResult.error;
   useEffect(() => {
-    const controller = new AbortController();
-    if (!sourceKey || !dates.length) return () => controller.abort();
-    const load = async () => {
-      try {
-        const interval = { sourceKey, ...timestampRange(start, end) };
-        const [metrics, workouts, sleep, imports, freshSources] = await Promise.all([
-          view === "Overview" || view === "Metrics"
-            ? collection<DailyMetric>(
-                "daily-metrics",
-                "dailyMetrics",
-                token,
-                { sourceKey, startDate: start, endDate: end },
-                controller.signal,
-              )
-            : [],
-          view === "Workouts"
-            ? collection<Workout>("workouts", "workouts", token, interval, controller.signal)
-            : [],
-          view === "Sleep"
-            ? collection<Sleep>("sleep", "sleep", token, interval, controller.signal)
-            : [],
-          view === "Imports"
-            ? collection<Import>("imports", "imports", token, interval, controller.signal)
-            : [],
-          collection<Source>("sources", "sources", token, {}, controller.signal),
-        ]);
-        if (!controller.signal.aborted) {
-          setFailure(undefined);
-          setSources(freshSources);
-          setResult({ key, metrics, workouts, sleep, imports });
-        }
-      } catch (cause) {
-        if (controller.signal.aborted) return;
-        if (cause instanceof ApiError && cause.status === 401) {
-          disconnect(cause.message);
-          return;
-        }
-        setFailure({
-          key,
-          message: cause instanceof Error ? cause.message : "Could not load data.",
-        });
-      }
-    };
-    void load();
-    return () => controller.abort();
-  }, [key, token]);
+    if (cause instanceof ApiError && cause.status === 401) disconnect(cause.message);
+  }, [cause]);
   const source = sources.find((row) => row.sourceKey === sourceKey);
-  const data = result?.key === key ? result : undefined;
-  const error = failure?.key === key ? failure.message : undefined;
+  const data = result.data
+    ? {
+        metrics: result.data as DailyMetric[],
+        workouts: result.data as Workout[],
+        sleep: result.data as Sleep[],
+        imports: result.data as Import[],
+      }
+    : undefined;
+  const error = cause?.message;
   const today = day(new Date());
   const activePreset = end === today ? dates.length : 0;
   function preset(days: number) {
@@ -133,8 +104,8 @@ export function Dashboard({
     update({ start: day(first), end: day(last) });
   }
   function reload() {
-    setFailure(undefined);
-    setRefresh((n) => n + 1);
+    session.$sources.invalidate();
+    request?.$store.invalidate();
   }
   return (
     <div class="min-h-screen lg:grid lg:grid-cols-[232px_1fr]">
