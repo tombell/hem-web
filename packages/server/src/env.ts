@@ -63,7 +63,10 @@ function parseEnvLine(line: string): { key: string; value: string } | undefined 
 
 function parseEnvValue(rawValue: string): string {
   if (rawValue.startsWith('"') && rawValue.endsWith('"')) {
-    return rawValue.slice(1, -1).replaceAll("\\n", "\n").replaceAll("\\r", "\r");
+    return rawValue
+      .slice(1, -1)
+      .replaceAll(String.raw`\n`, "\n")
+      .replaceAll(String.raw`\r`, "\r");
   }
 
   if (rawValue.startsWith("'") && rawValue.endsWith("'")) {
