@@ -25,7 +25,7 @@ export function registerAppleHealthRoutes(
   server: FastifyInstance,
   { config, db, logger }: AppleHealthRouteDependencies,
 ): void {
-  server.post("/apple-health/import", async (request, reply) => {
+  server.post<{ Body: ParsedJsonBody }>("/apple-health/import", async (request, reply) => {
     const startedAt = performance.now();
 
     if (!isAuthorized(request, config.bearerToken)) {
@@ -41,7 +41,7 @@ export function registerAppleHealthRoutes(
       });
     }
 
-    const body = request.body as ParsedJsonBody;
+    const body = request.body;
     const parsed = body.parsed;
     const rawBody = body.raw;
 

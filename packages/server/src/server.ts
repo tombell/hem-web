@@ -70,7 +70,7 @@ export function createHealthImportServer({
       try {
         done(null, { parsed: JSON.parse(raw), raw } satisfies ParsedJsonBody);
       } catch (error) {
-        done(error as Error);
+        done(error instanceof Error ? error : new Error("Invalid JSON"));
       }
     },
   );

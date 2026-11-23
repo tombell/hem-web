@@ -71,10 +71,11 @@ describe("health queries", () => {
 
 describe("chart data", () => {
   test("keeps mixed units separate and missing dates absent", () => {
-    const rows = [
-      { metric: "distance", unit: "km", date: "2026-11-01", value: 2 },
-      { metric: "distance", unit: "mi", date: "2026-11-03", value: 3 },
-    ] as Array<DailyMetric>;
+    const row = { importId: 1, sourceKey: "phone", updatedAt: "2026-11-03T00:00:00Z" };
+    const rows: Array<DailyMetric> = [
+      { ...row, id: 1, metric: "distance", unit: "km", date: "2026-11-01", value: 2 },
+      { ...row, id: 2, metric: "distance", unit: "mi", date: "2026-11-03", value: 3 },
+    ];
     const series = metricSeries(rows);
     expect(series).toHaveLength(2);
     expect(series[0].rows).toHaveLength(1);

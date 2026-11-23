@@ -16,7 +16,6 @@ import { SleepView } from "./sleep-view";
 import { WorkoutsView } from "./workouts-view";
 
 const views = ["Overview", "Metrics", "Sleep", "Workouts", "Imports"] as const;
-type View = (typeof views)[number];
 const icons = {
   Overview: "overview",
   Metrics: "metrics",
@@ -46,8 +45,8 @@ export function Dashboard({
   const sourceResult = useStore(session.$sources);
   const sources = sourceResult.data ?? initialSources;
   const [params, update] = useFilters();
-  const requestedView = params.get("view") as View;
-  const view = views.includes(requestedView) ? requestedView : "Overview";
+  const requestedView = params.get("view");
+  const view = views.find((name) => name === requestedView) ?? "Overview";
   const sourceKey = sources.some((source) => source.sourceKey === params.get("source"))
     ? params.get("source")!
     : sources[0]?.sourceKey || "";
@@ -84,6 +83,8 @@ export function Dashboard({
     }
   }, [cause, disconnect]);
   const source = sources.find((row) => row.sourceKey === sourceKey);
+  // The view picks the endpoint, so the rows match that view's row type.
+  /* eslint-disable typescript/no-unsafe-type-assertion */
   const data = result.data
     ? {
         metrics: result.data as Array<DailyMetric>,
@@ -92,6 +93,7 @@ export function Dashboard({
         imports: result.data as Array<Import>,
       }
     : undefined;
+  /* eslint-enable typescript/no-unsafe-type-assertion */
   const error = cause?.message;
   const activePreset = end === today ? dates.length : 0;
   function preset(days: number) {

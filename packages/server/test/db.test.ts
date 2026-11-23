@@ -80,8 +80,9 @@ describe("database migrations", () => {
       "Cannot migrate invalid timestamp in imports.range_start for row 1",
     );
     expect(legacy.pragma("user_version", { simple: true })).toBe(1);
-    const columns = legacy.pragma("table_info(imports)") as Array<{ name: string }>;
-    expect(columns.some((column) => column.name === "range_start_ms")).toBe(false);
+    expect(legacy.pragma("table_info(imports)")).not.toContainEqual(
+      expect.objectContaining({ name: "range_start_ms" }),
+    );
 
     legacy.close();
   });

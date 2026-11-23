@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
 import type { AppConfig } from "../src/config";
 import { openDatabase } from "../src/db";
 import type { HealthDatabase } from "../src/db";
-import type { HealthPayload, QuantityValue } from "../src/payload";
+import type { HealthPayload } from "../src/payload";
 import { createHealthImportServer, startServer } from "../src/server";
 
 const BASE_CONFIG: AppConfig = {
@@ -656,7 +656,7 @@ describe("POST /apple-health/import", () => {
     const payload = validPayload();
     const changedPayload = structuredClone(payload);
     changedPayload.categorySamples[0].value = "logged";
-    (changedPayload.dailyMetrics[0].steps as QuantityValue).value = 9001;
+    changedPayload.dailyMetrics[0].steps = { unit: "count", value: 9001 };
     changedPayload.samples[0].value = 57;
 
     expect((await postPayload(payload)).statusCode).toBe(201);
@@ -798,7 +798,7 @@ describe("POST /apple-health/import", () => {
 
   test("does not log health payload values", async () => {
     const payload = validPayload();
-    (payload.dailyMetrics[0].steps as QuantityValue).value = 123_456_789;
+    payload.dailyMetrics[0].steps = { unit: "count", value: 123_456_789 };
 
     const response = await postPayload(payload);
 
