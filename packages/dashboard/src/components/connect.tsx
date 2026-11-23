@@ -60,9 +60,9 @@ export function Connect({
               }
               pending.session = undefined;
               onConnect(session, result.data);
-            } catch (cause) {
+            } catch (error_) {
               if (pending.session === session) {
-                setError(cause instanceof Error ? cause.message : "Connection failed.");
+                setError(error_ instanceof Error ? error_.message : "Connection failed.");
                 session.dispose();
                 pending.session = undefined;
               }
