@@ -1,15 +1,13 @@
 {
   "compilerOptions": {
-    "allowImportingTsExtensions": true,
     "lib": ["ESNext"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "noEmit": true,
-    "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
     "target": "ESNext",
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "scripts/**/*.ts", "test/**/*.ts", "vite.config.ts"]
+  "include": ["vite.config.ts"]
 }

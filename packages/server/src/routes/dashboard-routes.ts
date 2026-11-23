@@ -5,7 +5,7 @@ import fastifyStatic from "@fastify/static";
 import type { FastifyInstance } from "fastify";
 
 export async function registerDashboardRoutes(server: FastifyInstance): Promise<void> {
-  const root = fileURLToPath(new URL("../../packages/dashboard/dist/", import.meta.url));
+  const root = fileURLToPath(new URL("../../../dashboard/dist/", import.meta.url));
   server.get("/dashboard", async (_request, reply) => reply.redirect("./dashboard/"));
   if (!existsSync(root)) {
     server.get("/dashboard/", async (_request, reply) =>

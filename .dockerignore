@@ -9,11 +9,6 @@
 !tsconfig.json
 !vite.config.ts
 !README.md
-!src/
-!src/**/*.ts
-!src/openapi.json
-!test/
-!test/*.ts
 # Defense in depth if an allowlist is extended later.
 **/node_modules/**
 **/.git/**
@@ -29,6 +24,14 @@
 **/*private*/**
 
 !packages/
+!packages/server/
+!packages/server/package.json
+!packages/server/tsconfig.json
+!packages/server/src/
+!packages/server/src/**/*.ts
+!packages/server/src/openapi.json
+!packages/server/test/
+!packages/server/test/*.ts
 !packages/dashboard/
 !packages/dashboard/package.json
 !packages/dashboard/tsconfig.json
