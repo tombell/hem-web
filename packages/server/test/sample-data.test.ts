@@ -12,6 +12,8 @@ describe("sample data", () => {
     const payloads = samplePayloads({ days: 60, now });
     const db = openDatabase(":memory:");
     for (const payload of payloads) {
+      // Round-trip through JSON to validate the payload as the API receives it.
+      // eslint-disable-next-line unicorn/prefer-structured-clone
       const result = validateHealthPayload(JSON.parse(JSON.stringify(payload)));
       expect(result).toMatchObject({ ok: true });
       expect(importHealthPayload(db, payload, JSON.stringify(payload)).status).toBe("created");

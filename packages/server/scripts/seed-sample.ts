@@ -31,6 +31,8 @@ const db = openDatabase(dbPath);
 const totals: Record<string, number> = {};
 let imports = 0;
 for (const payload of samplePayloads({ days, seed })) {
+  // Round-trip through JSON to validate the payload as the API receives it.
+  // eslint-disable-next-line unicorn/prefer-structured-clone
   const result = validateHealthPayload(JSON.parse(JSON.stringify(payload)));
   if (!result.ok) {
     throw new Error(`Generated payload is invalid: ${result.error}`);
