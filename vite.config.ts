@@ -25,7 +25,6 @@ export default defineConfig({
       "typescript/no-duplicate-type-constituents": "off",
       "typescript/no-explicit-any": "off",
       "typescript/no-floating-promises": "off",
-      "typescript/no-import-type-side-effects": "off",
       "typescript/no-misused-promises": "off",
       "typescript/no-non-null-assertion": "off",
       "typescript/no-unsafe-argument": "off",
