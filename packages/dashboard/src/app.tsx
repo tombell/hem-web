@@ -9,7 +9,7 @@ import type { Session } from "./queries";
 export function App() {
   const [session, setSession] = useState<Session>();
   useEffect(() => () => session?.dispose(), [session]);
-  const [sources, setSources] = useState<Source[]>([]);
+  const [sources, setSources] = useState<Array<Source>>([]);
   const [notice, setNotice] = useState("");
   return session ? (
     <Dashboard

@@ -24,7 +24,7 @@ function hourTicks(first: number, last: number) {
   const step = last - first > 10 * hour ? 2 * hour : hour;
   const start = new Date(first);
   start.setMinutes(0, 0, 0);
-  const ticks: number[] = [];
+  const ticks: Array<number> = [];
   for (let tick = +start + hour; tick < last; tick += hour) {
     if (new Date(tick).getHours() % (step / hour) === 0) {
       ticks.push(tick);
@@ -33,8 +33,8 @@ function hourTicks(first: number, last: number) {
   return ticks;
 }
 
-export function SleepView({ rows }: { rows: Sleep[] }) {
-  const nights = new Map<string, Sleep[]>();
+export function SleepView({ rows }: { rows: Array<Sleep> }) {
+  const nights = new Map<string, Array<Sleep>>();
   for (const row of rows) {
     const key = night(row);
     nights.set(key, [...(nights.get(key) ?? []), row]);

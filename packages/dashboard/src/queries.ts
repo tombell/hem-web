@@ -12,7 +12,7 @@ export function createSession(token: string) {
   function query<T>(endpoint: string, key: string, filters: Record<string, string> = {}) {
     const $active = atom(true);
     const controllers = new Set<AbortController>();
-    const $store = createFetcherStore<T[], Error>(
+    const $store = createFetcherStore<Array<T>, Error>(
       [JSON.stringify([endpoint, Object.entries(filters).toSorted()]), $active],
       {
         fetcher: async () => {

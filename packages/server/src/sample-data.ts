@@ -44,7 +44,7 @@ export function samplePayloads({
   days = 120,
   now = new Date(),
   seed = 1,
-}: SampleOptions = {}): HealthPayload[] {
+}: SampleOptions = {}): Array<HealthPayload> {
   let state = seed % 2_147_483_647 || 1;
   const random = () => (state = (state * 16_807) % 2_147_483_647) / 2_147_483_647;
   const between = (min: number, max: number) => min + random() * (max - min);
@@ -170,11 +170,11 @@ export function samplePayloads({
 }
 
 interface SourceData {
-  categorySamples: CategorySampleRecord[];
-  dailyMetrics: DailyMetricRecord[];
-  samples: SampleRecord[];
-  sleep: SleepRecord[];
-  workouts: WorkoutRecord[];
+  categorySamples: Array<CategorySampleRecord>;
+  dailyMetrics: Array<DailyMetricRecord>;
+  samples: Array<SampleRecord>;
+  sleep: Array<SleepRecord>;
+  workouts: Array<WorkoutRecord>;
 }
 
 function emptyData(): SourceData {
@@ -182,13 +182,18 @@ function emptyData(): SourceData {
 }
 
 /** Splits one source's records into weekly imports, like the iOS app sends them. */
-function weekly(source: SourceInfo, data: SourceData, firstDay: Date, now: Date): HealthPayload[] {
+function weekly(
+  source: SourceInfo,
+  data: SourceData,
+  firstDay: Date,
+  now: Date,
+): Array<HealthPayload> {
   // Boundaries at midday keep each night's sleep inside a single import.
-  const payloads: HealthPayload[] = [];
+  const payloads: Array<HealthPayload> = [];
   let start = +firstDay - 12 * HOUR;
   while (start < +now) {
     const end = Math.min(start + 7 * DAY, +now);
-    const inside = <T extends { start: string; end: string }>(records: T[]) =>
+    const inside = <T extends { start: string; end: string }>(records: Array<T>) =>
       records.filter((row) => Date.parse(row.start) >= start && Date.parse(row.end) <= end);
     const dailyMetrics = data.dailyMetrics.filter((row) => {
       const midday = Date.parse(`${row.date}T12:00:00`);
@@ -233,7 +238,7 @@ function round(value: number, digits = 0): number {
   return +value.toFixed(digits);
 }
 
-function pick<T>(random: () => number, values: readonly T[]): T {
+function pick<T>(random: () => number, values: ReadonlyArray<T>): T {
   return values[Math.floor(random() * values.length)];
 }
 

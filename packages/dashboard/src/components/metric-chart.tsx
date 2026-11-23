@@ -7,9 +7,9 @@ import { calendarDate } from "../date-time";
 type Point = { index: number; value: number };
 
 /** Splits values into runs of consecutive recorded days so missing days stay as gaps. */
-export function runs(dates: string[], values: Map<string, number>): Point[][] {
-  const result: Point[][] = [];
-  let current: Point[] = [];
+export function runs(dates: Array<string>, values: Map<string, number>): Array<Array<Point>> {
+  const result: Array<Array<Point>> = [];
+  let current: Array<Point> = [];
   dates.forEach((date, index) => {
     const value = values.get(date);
     if (value === undefined) {
@@ -36,7 +36,7 @@ function niceTicks(min: number, max: number) {
   const step = [1, 2, 2.5, 5, 10].find((factor) => factor * magnitude >= rough)! * magnitude;
   const lo = Math.floor(min / step) * step;
   const hi = Math.ceil(max / step) * step;
-  const ticks: number[] = [];
+  const ticks: Array<number> = [];
   for (let tick = lo; tick <= hi + step / 2; tick += step) {
     ticks.push(+tick.toPrecision(12));
   }
@@ -65,8 +65,8 @@ export function MetricChart({
   unit,
   marker = "marker-blue",
 }: {
-  rows: DailyMetric[];
-  dates: string[];
+  rows: Array<DailyMetric>;
+  dates: Array<string>;
   unit: string;
   marker?: Marker;
 }) {
@@ -318,8 +318,8 @@ export function Sparkline({
   dates,
   marker = "marker-blue",
 }: {
-  rows: DailyMetric[];
-  dates: string[];
+  rows: Array<DailyMetric>;
+  dates: Array<string>;
   marker?: Marker;
 }) {
   const values = new Map(rows.map((row) => [row.date, row.value]));

@@ -72,7 +72,7 @@ export function migrateDatabase(db: HealthDatabase, targetVersion = LATEST_DATAB
   }
 }
 
-const DATABASE_MIGRATIONS: DatabaseMigration[] = [
+const DATABASE_MIGRATIONS: Array<DatabaseMigration> = [
   {
     version: 1,
     migrate: (db) =>
@@ -300,7 +300,7 @@ function addNormalizedTimestampColumns(db: HealthDatabase): void {
   `);
 }
 
-function backfillTimestampColumns(db: HealthDatabase, table: string, columns: string[]): void {
+function backfillTimestampColumns(db: HealthDatabase, table: string, columns: Array<string>): void {
   const rows = db
     .prepare<[], Record<string, number | string>>(`SELECT id, ${columns.join(", ")} FROM ${table}`)
     .all();

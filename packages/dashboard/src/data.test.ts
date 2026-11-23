@@ -80,7 +80,7 @@ describe("chart data", () => {
     const rows = [
       { metric: "distance", unit: "km", date: "2026-11-01", value: 2 },
       { metric: "distance", unit: "mi", date: "2026-11-03", value: 3 },
-    ] as DailyMetric[];
+    ] as Array<DailyMetric>;
     const series = metricSeries(rows);
     expect(series).toHaveLength(2);
     expect(series[0].rows).toHaveLength(1);
