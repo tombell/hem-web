@@ -130,11 +130,12 @@ async function request(
   url: string,
   payload?: unknown,
 ): Promise<LightMyRequestResponse> {
+  const authorization = "Bearer test-secret";
   return server.inject({
-    headers: {
-      authorization: "Bearer test-secret",
-      ...(payload === undefined ? {} : { "content-type": "application/json" }),
-    },
+    headers:
+      payload === undefined
+        ? { authorization }
+        : { authorization, "content-type": "application/json" },
     method,
     payload: payload === undefined ? undefined : JSON.stringify(payload),
     url,
