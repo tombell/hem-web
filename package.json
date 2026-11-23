@@ -18,6 +18,7 @@
     "api:types": "pnpm --package=typescript@5.9.3 --package=openapi-typescript@7.13.0 dlx openapi-typescript packages/server/src/openapi.json -o packages/dashboard/src/api.generated.ts"
   },
   "devDependencies": {
+    "@cloudflare/oxlint-config": "^0.2.0",
     "@types/node": "^24.19.2",
     "typescript": "^7.0.2",
     "vite-plus": "catalog:"
