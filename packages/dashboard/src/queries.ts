@@ -15,7 +15,13 @@ export function createSession(token: string) {
     const $active = atom(true);
     const controllers = new Set<AbortController>();
     const $store = createFetcherStore<Array<T>, Error>(
-      [JSON.stringify([endpoint, Object.entries(filters).toSorted()]), $active],
+      [
+        JSON.stringify([
+          endpoint,
+          Object.entries(filters).toSorted(([a], [b]) => a.localeCompare(b)),
+        ]),
+        $active,
+      ],
       {
         fetcher: async () => {
           const controller = new AbortController();
