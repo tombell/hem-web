@@ -117,7 +117,7 @@ interface SleepRow {
 type SqlParams = Array<unknown>;
 
 const DEFAULT_LIMIT = 500;
-const MAX_LIMIT = 5_000;
+const MAX_LIMIT = 5000;
 
 type CursorEndpoint =
   | "category-samples"

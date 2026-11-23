@@ -67,7 +67,7 @@ export function samplePayloads({
 
     // Each device misses roughly one day in fifteen (left at home, or charging), to
     // exercise gap handling. The watch counts slightly differently from the phone.
-    const steps = between(5_500, 11_500) + trend * 1_500 + (weekend ? 1_800 : 0);
+    const steps = between(5500, 11_500) + trend * 1500 + (weekend ? 1800 : 0);
     const exercise = between(8, 55) + (weekend ? 15 : 0);
     if (random() > 0.07) {
       phoneData.dailyMetrics.push({

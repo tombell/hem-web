@@ -16,7 +16,7 @@ const CONFIG: AppConfig = {
   maxBodyBytes: 5_242_880,
   port: 0,
   publicUrl: "https://hem.example.test",
-  rateLimitMax: 1_000,
+  rateLimitMax: 1000,
   rateLimitWindowMs: 60_000,
 };
 
