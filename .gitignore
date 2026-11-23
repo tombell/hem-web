@@ -1,8 +1,8 @@
 node_modules/
 .pnpm-store/
 
-data/*.sqlite
-data/*.sqlite-*
+packages/server/data/*.sqlite
+packages/server/data/*.sqlite-*
 
 *.log
 .DS_Store

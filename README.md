@@ -26,17 +26,17 @@ HERMES_HEALTH_BEARER_TOKEN=replace-with-a-long-random-secret
 
 ### Configuration
 
-| Variable                             | Default           | Description                                                                        |
-| ------------------------------------ | ----------------- | ---------------------------------------------------------------------------------- |
-| `HERMES_HEALTH_BEARER_TOKEN`         | required          | Bearer token for Apple Health endpoints.                                           |
-| `HERMES_HEALTH_DASHBOARD_TOKEN`      | unset             | Optional read-only token for dashboard queries. Must differ from the import token. |
-| `HERMES_HEALTH_DB_PATH`              | `data/hem.sqlite` | SQLite database path.                                                              |
-| `HERMES_HEALTH_MAX_BODY_BYTES`       | `5242880`         | Maximum JSON import body size.                                                     |
-| `HERMES_HEALTH_PUBLIC_URL`           | `/`               | HTTP(S) or absolute-path OpenAPI server URL.                                       |
-| `HERMES_HEALTH_RATE_LIMIT_MAX`       | `300`             | Requests allowed per client IP and window.                                         |
-| `HERMES_HEALTH_RATE_LIMIT_WINDOW_MS` | `60000`           | In-memory rate-limit window in milliseconds.                                       |
-| `HOST`                               | `127.0.0.1`       | Listen address.                                                                    |
-| `PORT`                               | `3000`            | Listen port.                                                                       |
+| Variable                             | Default                           | Description                                                                        |
+| ------------------------------------ | --------------------------------- | ---------------------------------------------------------------------------------- |
+| `HERMES_HEALTH_BEARER_TOKEN`         | required                          | Bearer token for Apple Health endpoints.                                           |
+| `HERMES_HEALTH_DASHBOARD_TOKEN`      | unset                             | Optional read-only token for dashboard queries. Must differ from the import token. |
+| `HERMES_HEALTH_DB_PATH`              | `packages/server/data/hem.sqlite` | SQLite database path.                                                              |
+| `HERMES_HEALTH_MAX_BODY_BYTES`       | `5242880`                         | Maximum JSON import body size.                                                     |
+| `HERMES_HEALTH_PUBLIC_URL`           | `/`                               | HTTP(S) or absolute-path OpenAPI server URL.                                       |
+| `HERMES_HEALTH_RATE_LIMIT_MAX`       | `300`                             | Requests allowed per client IP and window.                                         |
+| `HERMES_HEALTH_RATE_LIMIT_WINDOW_MS` | `60000`                           | In-memory rate-limit window in milliseconds.                                       |
+| `HOST`                               | `127.0.0.1`                       | Listen address.                                                                    |
+| `PORT`                               | `3000`                            | Listen port.                                                                       |
 
 ## Running
 
@@ -71,9 +71,9 @@ The dashboard shows daily metric charts and values, workouts, individual sleep i
 
 Daily metric dates remain as exported. Timestamp filters use the browser's timezone and include the entire final calendar day. Sleep records are grouped by night (records starting before local midday belong to the previous evening) and laid out by stage on a shared timeline, with overlaps shown separately; no nightly duration total is inferred. Mixed units appear as separate metric series, and missing records appear as gaps, not zero. The overview cards show the latest recorded value within the selected range, not a period total.
 
-For development, run `pnpm start` in one terminal and `pnpm dev:dashboard` in another. To preview with fictional data instead of your own, run `pnpm seed:sample` to rebuild `data/sample.sqlite` (120 days from a sample iPhone and Apple Watch; vary it with `--days 30` or `--seed 2`), then run `pnpm start:sample` in place of `pnpm start`. Your configured database is not touched. Open the dashboard URL printed by Vite+. Its development proxy targets `http://127.0.0.1:3000`; change the package's Vite config if using another API port. Production assets are served by Fastify, and the container build includes them.
+For development, run `pnpm start` in one terminal and `pnpm dev:dashboard` in another. To preview with fictional data instead of your own, run `pnpm seed:sample` to rebuild `packages/server/data/sample.sqlite` (120 days from a sample iPhone and Apple Watch; vary it with `--days 30` or `--seed 2`), then run `pnpm start:sample` in place of `pnpm start`. Your configured database is not touched. Open the dashboard URL printed by Vite+. Its development proxy targets `http://127.0.0.1:3000`; change the package's Vite config if using another API port. Production assets are served by Fastify, and the container build includes them.
 
-Run `pnpm api:types` after changing `src/openapi.json`, then `pnpm fmt`. Generated response types are committed. The generator runs in an isolated, pinned TypeScript 5 tool environment because it uses compiler APIs not exposed by TypeScript 7; application checks continue to use the project's TypeScript 7 compiler.
+Run `pnpm api:types` after changing `packages/server/src/openapi.json`, then `pnpm fmt`. Generated response types are committed. The generator runs in an isolated, pinned TypeScript 5 tool environment because it uses compiler APIs not exposed by TypeScript 7; application checks continue to use the project's TypeScript 7 compiler.
 
 Manual check: connect, switch sources and date ranges, inspect missing days in a chart and its values table, visit workouts/sleep/imports, then disconnect. Check the layout on a narrow screen and navigate filters and tables with the keyboard.
 
@@ -110,7 +110,7 @@ SQLite runs in WAL mode. Do not copy only the main database file while the servi
 ```sh
 mkdir -p /secure/backups/hem-web
 chmod 700 /secure/backups/hem-web
-sqlite3 data/hem.sqlite ".backup '/secure/backups/hem-web/hem-$(date +%F).sqlite'"
+sqlite3 packages/server/data/hem.sqlite ".backup '/secure/backups/hem-web/hem-$(date +%F).sqlite'"
 chmod 600 /secure/backups/hem-web/hem-*.sqlite
 ```
 
@@ -123,10 +123,10 @@ sqlite3 /secure/backups/hem-web/hem-2026-07-26.sqlite 'PRAGMA integrity_check;'
 To restore, stop Hem Web first, preserve the current files, and restore into a clean path:
 
 ```sh
-mv data/hem.sqlite data/hem.sqlite.previous
-rm -f data/hem.sqlite-wal data/hem.sqlite-shm
-sqlite3 /secure/backups/hem-web/hem-2026-07-26.sqlite ".backup 'data/hem.sqlite'"
-chmod 600 data/hem.sqlite
+mv packages/server/data/hem.sqlite packages/server/data/hem.sqlite.previous
+rm -f packages/server/data/hem.sqlite-wal packages/server/data/hem.sqlite-shm
+sqlite3 /secure/backups/hem-web/hem-2026-07-26.sqlite ".backup 'packages/server/data/hem.sqlite'"
+chmod 600 packages/server/data/hem.sqlite
 ```
 
 Start the service and confirm `/ready` before deleting the preserved database.
@@ -172,6 +172,17 @@ Application logs are structured JSON and omit request bodies and query parameter
 
 ## Development
 
+The repository is a pnpm workspace:
+
+| Path                 | Package          | Contents                                                       |
+| -------------------- | ---------------- | -------------------------------------------------------------- |
+| `packages/server`    | `@hem/server`    | Fastify API, SQLite storage, OpenAPI document, tests, scripts. |
+| `packages/dashboard` | `@hem/dashboard` | Preact dashboard, built to `dist/` and served by the server.   |
+
+The root holds only workspace tooling: shared Vite+ format and lint config, and
+scripts that run across packages. Run a single package's script with
+`pnpm --filter @hem/server <script>`.
+
 [Vite+](https://viteplus.dev/guide/) is installed locally at the workspace root.
 The existing pnpm scripts use its bundled Vitest, Oxlint, and Oxfmt, configured in
 `vite.config.ts`. No global `vp` installation is required. Node remains managed by
@@ -187,7 +198,7 @@ pnpm audit --prod
 ```
 
 Use `pnpm fmt` to format files, `pnpm lint:fix` for automatic lint fixes, and
-`pnpm exec vp test watch` to watch tests. `pnpm exec vp check` checks formatting
+`pnpm --filter <package> exec vp test watch` to watch tests. `pnpm exec vp check` checks formatting
 and lint; run `pnpm typecheck` separately for TypeScript checks.
 
 The backend runs TypeScript directly in Node, so there is no Vite application

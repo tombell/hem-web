@@ -11,8 +11,9 @@ WORKDIR /app
 # Compile better-sqlite3 locally instead of downloading a prebuilt binary.
 ENV npm_config_build_from_source=true
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/server/package.json ./packages/server/package.json
 COPY packages/dashboard/package.json ./packages/dashboard/package.json
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod --filter @hem/server
 
 FROM deps AS dashboard
 RUN CI=true pnpm install --frozen-lockfile
@@ -26,10 +27,12 @@ ENV NODE_ENV=production \
     HERMES_HEALTH_DB_PATH=/data/hem.sqlite
 WORKDIR /app
 COPY --from=deps /app/node_modules/ ./node_modules/
-COPY package.json ./
-COPY src/ ./src/
+COPY --from=deps /app/packages/server/node_modules/ ./packages/server/node_modules/
+COPY packages/server/package.json ./packages/server/
+COPY packages/server/src/ ./packages/server/src/
 COPY --from=dashboard /app/packages/dashboard/dist/ ./packages/dashboard/dist/
 RUN install -d -o node -g node -m 0700 /data
 USER node
 EXPOSE 3000
+WORKDIR /app/packages/server
 CMD ["node", "src/server.ts"]

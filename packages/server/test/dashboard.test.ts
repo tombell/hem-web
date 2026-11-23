@@ -77,7 +77,7 @@ test("serves dashboard assets without changing API or unknown routes", async () 
     );
   }
   const response = await server.inject("/dashboard/");
-  if (existsSync(new URL("../packages/dashboard/dist/index.html", import.meta.url))) {
+  if (existsSync(new URL("../../dashboard/dist/index.html", import.meta.url))) {
     expect(response.statusCode).toBe(200);
     expect(response.headers["content-type"]).toContain("text/html");
     expect(response.headers["content-security-policy"]).toContain("frame-ancestors 'none'");
