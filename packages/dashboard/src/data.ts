@@ -38,19 +38,24 @@ export async function collection<T>(
     if (!response.ok) {
       throw new ApiError(response.status);
     }
-    const body = await response.json();
-    if (!Array.isArray(body[key]) || typeof body.hasMore !== "boolean") {
+    const body: unknown = await response.json();
+    const page =
+      typeof body === "object" && body !== null ? new Map(Object.entries(body)) : new Map();
+    const items: unknown = page.get(key);
+    const hasMore: unknown = page.get("hasMore");
+    if (!Array.isArray(items) || typeof hasMore !== "boolean") {
       throw new Error("Unexpected response from the server.");
     }
-    rows.push(...body[key]);
-    if (!body.hasMore) {
+    rows.push(...(items as Array<T>));
+    if (!hasMore) {
       return rows;
     }
-    if (typeof body.nextCursor !== "string" || cursors.has(body.nextCursor)) {
+    const nextCursor: unknown = page.get("nextCursor");
+    if (typeof nextCursor !== "string" || cursors.has(nextCursor)) {
       throw new Error("The server returned an invalid page cursor.");
     }
-    cursors.add(body.nextCursor);
-    params.set("cursor", body.nextCursor);
+    cursors.add(nextCursor);
+    params.set("cursor", nextCursor);
   }
   throw new Error("This range contains too many records. Choose a shorter range.");
 }
