@@ -595,17 +595,24 @@ function parsePagination(
       decoded.version !== 1 ||
       !("values" in decoded) ||
       !Array.isArray(decoded.values) ||
-      decoded.values.length !== valueTypes.length ||
-      decoded.values.some(
-        (value, index) =>
-          typeof value !== valueTypes[index] ||
-          (typeof value === "number" && !Number.isFinite(value)),
-      )
+      decoded.values.length !== valueTypes.length
     ) {
       throw new Error("Invalid cursor");
     }
 
-    return { ok: true, value: { cursor: decoded.values as Array<CursorValue>, limit } };
+    const values: Array<unknown> = decoded.values;
+    const cursor: Array<CursorValue> = [];
+    for (const [index, value] of values.entries()) {
+      if (
+        typeof value !== valueTypes[index] ||
+        (typeof value !== "string" && (typeof value !== "number" || !Number.isFinite(value)))
+      ) {
+        throw new Error("Invalid cursor");
+      }
+      cursor.push(value);
+    }
+
+    return { ok: true, value: { cursor, limit } };
   } catch {
     return {
       ok: false,

@@ -463,10 +463,11 @@ function stableStringify(value: unknown): string {
     return `[${value.map(stableStringify).join(",")}]`;
   }
 
-  const object = value as Record<string, unknown>;
-  return `{${Object.keys(object)
-    .filter((key) => object[key] !== undefined)
-    .toSorted()
-    .map((key) => `${JSON.stringify(key)}:${stableStringify(object[key])}`)
+  const entries: Array<[string, unknown]> = Object.entries(value);
+  return `{${entries
+    .filter(([, entry]) => entry !== undefined)
+    // Compare UTF-16 code units, as the default sort does, to keep hashes stable.
+    .toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([key, entry]) => `${JSON.stringify(key)}:${stableStringify(entry)}`)
     .join(",")}}`;
 }

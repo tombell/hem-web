@@ -46,6 +46,8 @@ export async function collection<T>(
     if (!Array.isArray(items) || typeof hasMore !== "boolean") {
       throw new Error("Unexpected response from the server.");
     }
+    // Callers choose T to match the endpoint's documented row type.
+    // eslint-disable-next-line typescript/no-unsafe-type-assertion
     rows.push(...(items as Array<T>));
     if (!hasMore) {
       return rows;

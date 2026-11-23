@@ -113,7 +113,7 @@ test("changing filters aborts old requests and does not show old values", async 
     return new Promise(() => {});
   });
   await act(async () => {
-    const input = container.querySelector('input[type="date"]') as HTMLInputElement;
+    const input = container.querySelector<HTMLInputElement>('input[type="date"]')!;
     input.value = "2026-10-30";
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });

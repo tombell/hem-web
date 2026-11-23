@@ -42,7 +42,10 @@ export function migrateDatabase(db: HealthDatabase, targetVersion = LATEST_DATAB
     throw new Error(`Unsupported target database version ${targetVersion}`);
   }
 
-  const currentVersion = db.pragma("user_version", { simple: true }) as number;
+  const currentVersion = db.pragma("user_version", { simple: true });
+  if (typeof currentVersion !== "number") {
+    throw new TypeError("Could not read the database version");
+  }
   if (currentVersion > LATEST_DATABASE_VERSION) {
     throw new Error(
       `Database version ${currentVersion} is newer than supported version ${LATEST_DATABASE_VERSION}`,
