@@ -57,8 +57,8 @@ export async function collection<T>(
 
 export function label(value: string): string {
   return value
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/[_-]/g, " ")
+    .replaceAll(/([a-z])([A-Z])/g, "$1 $2")
+    .replaceAll(/[_-]/g, " ")
     .replace(/^./, (s) => s.toUpperCase());
 }
 export function day(date: Date): string {
