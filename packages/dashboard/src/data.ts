@@ -86,7 +86,7 @@ export function rangeDays(start: string, end: string): Array<string> {
     new Date(+first + i * 86_400_000).toISOString().slice(0, 10),
   );
 }
-export function timestampRange(start: string, end: string): { start: string; end: string } {
+export function timestampRange(start: string, end: string) {
   const last = new Date(`${end}T00:00:00`);
   last.setDate(last.getDate() + 1);
   return { start: new Date(`${start}T00:00:00`).toISOString(), end: last.toISOString() };

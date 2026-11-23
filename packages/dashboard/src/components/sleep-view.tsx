@@ -6,14 +6,14 @@ import type { Sleep } from "../data";
 import { calendarDate, dateTime, time } from "../date-time";
 import { DataTable } from "./data-table";
 
-const stages: Record<string, string> = {
-  inBed: "bg-sleep-bed ring-[1.5px] ring-ink/35 ring-inset",
-  awake: "bg-sleep-awake",
-  asleepREM: "bg-sleep-rem",
-  asleepCore: "bg-sleep-core",
-  asleepDeep: "bg-sleep-deep",
-};
-const order = Object.keys(stages);
+const stages = new Map([
+  ["inBed", "bg-sleep-bed ring-[1.5px] ring-ink/35 ring-inset"],
+  ["awake", "bg-sleep-awake"],
+  ["asleepREM", "bg-sleep-rem"],
+  ["asleepCore", "bg-sleep-core"],
+  ["asleepDeep", "bg-sleep-deep"],
+]);
+const order = [...stages.keys()];
 const hour = 3_600_000;
 
 /** Records starting before midday belong to the previous evening's night. */
@@ -59,7 +59,7 @@ export function SleepView({ rows }: { rows: Array<Sleep> }) {
             <li key={value} class="flex items-center gap-1.5">
               <span
                 aria-hidden="true"
-                class={`h-3 w-6 -rotate-3 rounded-[3px_8px_4px_9px] ${stages[value] ?? "bg-muted"}`}
+                class={`h-3 w-6 -rotate-3 rounded-[3px_8px_4px_9px] ${stages.get(value) ?? "bg-muted"}`}
               />
               {label(value)}
             </li>
@@ -123,7 +123,7 @@ export function SleepView({ rows }: { rows: Array<Sleep> }) {
                       .map((row) => (
                         <div
                           key={row.id}
-                          class={`absolute inset-y-0.5 min-w-0.5 rounded-[3px_7px_4px_8px] opacity-90 ${stages[value] ?? "bg-muted"}`}
+                          class={`absolute inset-y-0.5 min-w-0.5 rounded-[3px_7px_4px_8px] opacity-90 ${stages.get(value) ?? "bg-muted"}`}
                           style={{
                             left: `${position(Date.parse(row.start))}%`,
                             width: `${((Date.parse(row.end) - Date.parse(row.start)) / span) * 100}%`,

@@ -134,18 +134,18 @@ interface ParsedPagination {
   limit: number;
 }
 
-const LIST_HANDLERS: Record<string, (db: HealthDatabase, params: URLSearchParams) => ApiResult> = {
-  "/apple-health/category-samples": listCategorySamples,
-  "/apple-health/daily-metrics": listDailyMetrics,
-  "/apple-health/imports": listImports,
-  "/apple-health/samples": listSamples,
-  "/apple-health/sleep": listSleep,
-  "/apple-health/sources": listSources,
-  "/apple-health/workouts": listWorkouts,
-};
+const LIST_HANDLERS = new Map<string, (db: HealthDatabase, params: URLSearchParams) => ApiResult>([
+  ["/apple-health/category-samples", listCategorySamples],
+  ["/apple-health/daily-metrics", listDailyMetrics],
+  ["/apple-health/imports", listImports],
+  ["/apple-health/samples", listSamples],
+  ["/apple-health/sleep", listSleep],
+  ["/apple-health/sources", listSources],
+  ["/apple-health/workouts", listWorkouts],
+]);
 
 export function handleHealthQueryRequest(db: HealthDatabase, url: URL): ApiResult {
-  const listHandler = LIST_HANDLERS[url.pathname];
+  const listHandler = LIST_HANDLERS.get(url.pathname);
   if (listHandler) {
     return listHandler(db, url.searchParams);
   }
