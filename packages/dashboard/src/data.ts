@@ -30,14 +30,12 @@ export async function collection<T>(
   const cursors = new Set<string>();
   for (let page = 0; page < 100; page++) {
     // Pages depend on the cursor returned by the previous response.
-    // eslint-disable-next-line no-await-in-loop
     const response = await fetch(`../apple-health/${endpoint}?${params}`, {
       headers: { Authorization: `Bearer ${token}` },
       signal,
       cache: "no-store",
     });
     if (!response.ok) throw new ApiError(response.status);
-    // eslint-disable-next-line no-await-in-loop
     const body = await response.json();
     if (!Array.isArray(body[key]) || typeof body.hasMore !== "boolean")
       throw new Error("Unexpected response from the server.");

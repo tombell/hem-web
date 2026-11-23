@@ -1,3 +1,4 @@
+import cloudflare from "@cloudflare/oxlint-config/vite-plus";
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({
@@ -6,15 +7,59 @@ export default defineConfig({
     sortImports: true,
   },
   lint: {
-    plugins: ["eslint", "typescript", "unicorn", "oxc", "import"],
-    categories: {
-      correctness: "error",
-      suspicious: "error",
-      perf: "warn",
+    extends: [cloudflare],
+    env: cloudflare.env,
+    // Regenerate this file with `pnpm api:types` instead of editing it.
+    ignorePatterns: [...cloudflare.ignorePatterns, "packages/dashboard/src/api.generated.ts"],
+    rules: {
+      // Preact uses DOM attribute names such as `class` and `for`.
+      "react/no-unknown-property": "off",
+
+      // Temporarily off while migrating to @cloudflare/oxlint-config.
+      // Enable each rule with its fixes in a separate commit.
+      "typescript/array-type": "off",
+      "unicorn/catch-error-name": "off",
+      "import/consistent-type-specifier-style": "off",
+      curly: "off",
+      "react/button-has-type": "off",
+      "react/immutability": "off",
+      "react/purity": "off",
+      "react-hooks/exhaustive-deps": "off",
+      "typescript/no-duplicate-type-constituents": "off",
+      "typescript/no-explicit-any": "off",
+      "typescript/no-floating-promises": "off",
+      "typescript/no-import-type-side-effects": "off",
+      "typescript/no-misused-promises": "off",
+      "typescript/no-non-null-assertion": "off",
+      "typescript/no-unsafe-argument": "off",
+      "typescript/no-unsafe-assignment": "off",
+      "typescript/no-unsafe-call": "off",
+      "typescript/no-unsafe-member-access": "off",
+      "typescript/no-unsafe-return": "off",
+      "typescript/no-unsafe-type-assertion": "off",
+      "typescript/require-array-sort-compare": "off",
+      "typescript/return-await": "off",
+      "unicorn/numeric-separators-style": "off",
+      "unicorn/prefer-import-meta-properties": "off",
+      "unicorn/prefer-string-raw": "off",
+      "unicorn/prefer-string-replace-all": "off",
+      "unicorn/prefer-structured-clone": "off",
+      "quality/no-array-filter-map": "off",
+      "quality/no-conditional-empty-object-spread": "off",
+      "quality/no-known-value-widening": "off",
+      "quality/no-unsafe-dictionary-type": "off",
     },
-    env: {
-      builtin: true,
-      es2020: true,
-    },
+    overrides: [
+      {
+        // The server and its scripts log to the terminal.
+        files: ["packages/server/scripts/**", "packages/server/src/server.ts"],
+        rules: { "no-console": "off" },
+      },
+      {
+        // Temporarily off; the preset re-enables it for TypeScript files.
+        files: ["**/*.{ts,tsx,mts,cts}"],
+        rules: { "typescript/no-floating-promises": "off" },
+      },
+    ],
   },
 });
