@@ -70,7 +70,7 @@ export function Dashboard({
       endpoint === "daily-metrics" ? "dailyMetrics" : endpoint,
       filters,
     );
-  }, [session, sourceKey, start, end, endpoint]);
+  }, [session, sourceKey, start, end, endpoint, dates.length]);
   useEffect(() => () => request?.cancel(), [request]);
   const result = useStore(request?.$store ?? session.$sources);
   const cause = result.error ?? sourceResult.error;
@@ -78,7 +78,7 @@ export function Dashboard({
     if (cause instanceof ApiError && cause.status === 401) {
       disconnect(cause.message);
     }
-  }, [cause]);
+  }, [cause, disconnect]);
   const source = sources.find((row) => row.sourceKey === sourceKey);
   const data = result.data
     ? {
