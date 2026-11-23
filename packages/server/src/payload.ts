@@ -62,15 +62,15 @@ export interface SleepRecord {
 }
 
 export interface HealthPayload {
-  categorySamples: CategorySampleRecord[];
-  dailyMetrics: DailyMetricRecord[];
+  categorySamples: Array<CategorySampleRecord>;
+  dailyMetrics: Array<DailyMetricRecord>;
   generatedAt: string;
   range: RangeInfo;
-  samples: SampleRecord[];
+  samples: Array<SampleRecord>;
   schemaVersion: 1;
-  sleep: SleepRecord[];
+  sleep: Array<SleepRecord>;
   source: SourceInfo;
-  workouts: WorkoutRecord[];
+  workouts: Array<WorkoutRecord>;
 }
 
 export interface ValidationSuccess {
@@ -437,7 +437,7 @@ function validateOptionalArray<T>(
   input: unknown,
   name: string,
   validateItem: (item: unknown, index: number) => ValidationResultFor<T>,
-): ValidationResultFor<T[]> {
+): ValidationResultFor<Array<T>> {
   if (input === undefined) {
     return { ok: true, value: [] };
   }
@@ -446,7 +446,7 @@ function validateOptionalArray<T>(
     return invalid(`${name} must be an array when provided`);
   }
 
-  const value: T[] = [];
+  const value: Array<T> = [];
   for (const [index, item] of input.entries()) {
     const result = validateItem(item, index);
     if (!result.ok) {
@@ -471,7 +471,7 @@ function validateOptionalId(input: unknown, path: string): ValidationResultFor<s
 function validateOptionalStrings(
   input: Record<string, unknown>,
   prefix: string,
-  keys: string[],
+  keys: Array<string>,
 ): ValidationResultFor<void> {
   for (const key of keys) {
     const value = input[key];

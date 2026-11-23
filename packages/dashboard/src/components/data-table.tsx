@@ -5,7 +5,7 @@ export function DataTable({
   headings,
   children,
 }: {
-  headings: string[];
+  headings: Array<string>;
   children: ComponentChildren;
 }) {
   return (

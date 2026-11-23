@@ -24,9 +24,9 @@ export async function collection<T>(
   token: string,
   filters: Record<string, string>,
   signal: AbortSignal,
-): Promise<T[]> {
+): Promise<Array<T>> {
   const params = new URLSearchParams({ ...filters, limit: "1000" });
-  const rows: T[] = [];
+  const rows: Array<T> = [];
   const cursors = new Set<string>();
   for (let page = 0; page < 100; page++) {
     // Pages depend on the cursor returned by the previous response.
@@ -64,7 +64,7 @@ export function label(value: string): string {
 export function day(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
-export function rangeDays(start: string, end: string): string[] {
+export function rangeDays(start: string, end: string): Array<string> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) {
     return [];
   }
@@ -91,10 +91,10 @@ export function timestampRange(start: string, end: string): { start: string; end
   last.setDate(last.getDate() + 1);
   return { start: new Date(`${start}T00:00:00`).toISOString(), end: last.toISOString() };
 }
-export function metricSeries(rows: DailyMetric[]) {
+export function metricSeries(rows: Array<DailyMetric>) {
   const groups = new Map<
     string,
-    { key: string; metric: string; unit: string; rows: DailyMetric[] }
+    { key: string; metric: string; unit: string; rows: Array<DailyMetric> }
   >();
   for (const row of rows) {
     const key = JSON.stringify([row.metric, row.unit]);

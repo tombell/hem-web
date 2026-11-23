@@ -53,7 +53,7 @@ afterEach(async () => {
 
 describe("OpenAPI runtime contract", () => {
   test("resolves every local reference and has unique operation IDs", () => {
-    const references = collectValues(document, "$ref") as string[];
+    const references = collectValues(document, "$ref") as Array<string>;
     for (const reference of references.filter((value) => value.startsWith("#/"))) {
       expect(resolveReference({ $ref: reference }), reference).toBeDefined();
     }
@@ -170,12 +170,12 @@ function resolveReference(value: any): any {
     .reduce((current: any, segment: string) => current[segment], document);
 }
 
-function collectValues(value: unknown, key: string): unknown[] {
+function collectValues(value: unknown, key: string): Array<unknown> {
   if (typeof value !== "object" || value === null) {
     return [];
   }
 
-  const values: unknown[] = [];
+  const values: Array<unknown> = [];
   for (const [entryKey, entryValue] of Object.entries(value)) {
     if (entryKey === key) {
       values.push(entryValue);

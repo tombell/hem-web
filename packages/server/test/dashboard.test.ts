@@ -6,7 +6,7 @@ import { loadConfig } from "../src/config";
 import { openDatabase } from "../src/db";
 import { createHealthImportServer } from "../src/server";
 
-const servers: ReturnType<typeof createHealthImportServer>[] = [];
+const servers: Array<ReturnType<typeof createHealthImportServer>> = [];
 afterEach(async () => {
   await Promise.all(servers.splice(0).map((server) => server.close()));
 });

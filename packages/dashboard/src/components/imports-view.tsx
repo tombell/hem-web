@@ -4,7 +4,7 @@ import { dateTime } from "../date-time";
 import { DataTable } from "./data-table";
 import { Empty } from "./empty";
 
-export function ImportsView({ rows }: { rows: Import[] }) {
+export function ImportsView({ rows }: { rows: Array<Import> }) {
   return rows.length ? (
     <section class="panel">
       <h2 class="font-hand text-3xl font-bold">

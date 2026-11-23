@@ -11,8 +11,8 @@ export function loadEnvFiles(startDirectory = process.cwd(), env: Env = process.
   return env;
 }
 
-function findEnvFiles(startDirectory: string): string[] {
-  const paths: string[] = [];
+function findEnvFiles(startDirectory: string): Array<string> {
+  const paths: Array<string> = [];
   let directory = startDirectory;
 
   while (true) {

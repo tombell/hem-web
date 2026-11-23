@@ -18,7 +18,7 @@ const BASE_CONFIG: AppConfig = {
 };
 
 let db: HealthDatabase;
-let logs: Record<string, unknown>[];
+let logs: Array<Record<string, unknown>>;
 let server: ReturnType<typeof createHealthImportServer>;
 
 beforeEach(() => {
@@ -881,7 +881,7 @@ function sampleValue(type: string): number | undefined {
     .get(type)?.value;
 }
 
-function categorySampleValues(type: string): string[] {
+function categorySampleValues(type: string): Array<string> {
   return db
     .prepare<[string], { value: string }>(
       "SELECT value FROM category_samples WHERE type = ? ORDER BY value ASC",

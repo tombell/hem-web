@@ -50,7 +50,7 @@ export function Dashboard({
   disconnect,
 }: {
   session: Session;
-  sources: Source[];
+  sources: Array<Source>;
   disconnect: (message?: string) => void;
 }) {
   const sourceResult = useStore(session.$sources);
@@ -92,10 +92,10 @@ export function Dashboard({
   const source = sources.find((row) => row.sourceKey === sourceKey);
   const data = result.data
     ? {
-        metrics: result.data as DailyMetric[],
-        workouts: result.data as Workout[],
-        sleep: result.data as Sleep[],
-        imports: result.data as Import[],
+        metrics: result.data as Array<DailyMetric>,
+        workouts: result.data as Array<Workout>,
+        sleep: result.data as Array<Sleep>,
+        imports: result.data as Array<Import>,
       }
     : undefined;
   const error = cause?.message;

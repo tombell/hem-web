@@ -114,7 +114,7 @@ interface SleepRow {
   value: string;
 }
 
-type SqlParams = unknown[];
+type SqlParams = Array<unknown>;
 
 const DEFAULT_LIMIT = 500;
 const MAX_LIMIT = 5_000;
@@ -130,7 +130,7 @@ type CursorEndpoint =
 type CursorValue = number | string;
 
 interface ParsedPagination {
-  cursor: CursorValue[] | undefined;
+  cursor: Array<CursorValue> | undefined;
   limit: number;
 }
 
@@ -605,7 +605,7 @@ function parsePagination(
       throw new Error("Invalid cursor");
     }
 
-    return { ok: true, value: { cursor: decoded.values as CursorValue[], limit } };
+    return { ok: true, value: { cursor: decoded.values as Array<CursorValue>, limit } };
   } catch {
     return {
       ok: false,
@@ -617,15 +617,15 @@ function parsePagination(
 function buildWhereClause(
   params: URLSearchParams,
   options: {
-    cursor: CursorValue[] | undefined;
+    cursor: Array<CursorValue> | undefined;
     cursorSql: string;
     dateColumn?: string;
     exactFilters: Array<[column: string, queryParam: string]>;
     intervalColumns?: [startColumn: string, endColumn: string];
   },
-): { ok: true; sql: string; values: unknown[] } | { ok: false; result: ApiResult } {
+): { ok: true; sql: string; values: Array<unknown> } | { ok: false; result: ApiResult } {
   const clauses = ["1 = 1"];
-  const values: unknown[] = [];
+  const values: Array<unknown> = [];
   for (const [column, queryParam] of options.exactFilters) {
     addExactFilter(clauses, values, column, params.get(queryParam));
   }
@@ -685,8 +685,8 @@ function buildWhereClause(
 }
 
 function addExactFilter(
-  clauses: string[],
-  values: unknown[],
+  clauses: Array<string>,
+  values: Array<unknown>,
   column: string,
   value: string | null,
 ): void {
@@ -849,10 +849,10 @@ function quantity(
 
 function paginatedResult<Row>(
   endpoint: CursorEndpoint,
-  rows: Row[],
+  rows: Array<Row>,
   limit: number,
-  cursorValues: (row: Row) => CursorValue[],
-  body: (page: Row[]) => Record<string, unknown>,
+  cursorValues: (row: Row) => Array<CursorValue>,
+  body: (page: Array<Row>) => Record<string, unknown>,
 ): ApiResult {
   const page = rows.slice(0, limit);
   const hasMore = rows.length > limit;

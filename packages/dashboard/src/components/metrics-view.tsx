@@ -20,8 +20,8 @@ export function MetricsView({
   metric,
   onSelectMetric,
 }: {
-  rows: DailyMetric[];
-  dates: string[];
+  rows: Array<DailyMetric>;
+  dates: Array<string>;
   overview: boolean;
   metric: string | null;
   onSelectMetric: (key: string) => void;

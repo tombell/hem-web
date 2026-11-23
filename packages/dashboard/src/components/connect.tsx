@@ -9,7 +9,7 @@ export function Connect({
   onConnect,
   notice,
 }: {
-  onConnect: (session: Session, sources: Source[]) => void;
+  onConnect: (session: Session, sources: Array<Source>) => void;
   notice: string;
 }) {
   const [value, setValue] = useState("");
