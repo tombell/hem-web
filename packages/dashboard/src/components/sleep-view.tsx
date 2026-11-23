@@ -52,17 +52,18 @@ export function SleepView({ rows }: { rows: Array<Sleep> }) {
           class="flex flex-wrap gap-x-5 gap-y-1 font-hand text-lg font-semibold"
           aria-label="Sleep stages"
         >
-          {[...order, ...[...present].filter((value) => !order.includes(value))]
-            .filter((value) => present.has(value))
-            .map((value) => (
-              <li key={value} class="flex items-center gap-1.5">
-                <span
-                  aria-hidden="true"
-                  class={`h-3 w-6 -rotate-3 rounded-[3px_8px_4px_9px] ${stages[value] ?? "bg-muted"}`}
-                />
-                {label(value)}
-              </li>
-            ))}
+          {[
+            ...order.filter((value) => present.has(value)),
+            ...[...present].filter((value) => !order.includes(value)),
+          ].map((value) => (
+            <li key={value} class="flex items-center gap-1.5">
+              <span
+                aria-hidden="true"
+                class={`h-3 w-6 -rotate-3 rounded-[3px_8px_4px_9px] ${stages[value] ?? "bg-muted"}`}
+              />
+              {label(value)}
+            </li>
+          ))}
         </ul>
       </div>
       {[...nights].toReversed().map(([date, records]) => {
