@@ -95,36 +95,52 @@ export function validateHealthPayload(input: unknown): ValidationResult {
   }
 
   const sourceResult = validateSource(input.source);
-  if (!sourceResult.ok) return sourceResult;
+  if (!sourceResult.ok) {
+    return sourceResult;
+  }
 
   const generatedAtResult = requireIsoDateTime(input.generatedAt, "generatedAt");
-  if (!generatedAtResult.ok) return generatedAtResult;
+  if (!generatedAtResult.ok) {
+    return generatedAtResult;
+  }
 
   const rangeResult = validateRange(input.range);
-  if (!rangeResult.ok) return rangeResult;
+  if (!rangeResult.ok) {
+    return rangeResult;
+  }
 
   const dailyMetricsResult = validateOptionalArray(
     input.dailyMetrics,
     "dailyMetrics",
     validateDailyMetricRecord,
   );
-  if (!dailyMetricsResult.ok) return dailyMetricsResult;
+  if (!dailyMetricsResult.ok) {
+    return dailyMetricsResult;
+  }
 
   const samplesResult = validateOptionalArray(input.samples, "samples", validateSampleRecord);
-  if (!samplesResult.ok) return samplesResult;
+  if (!samplesResult.ok) {
+    return samplesResult;
+  }
 
   const categorySamplesResult = validateOptionalArray(
     input.categorySamples,
     "categorySamples",
     validateCategorySampleRecord,
   );
-  if (!categorySamplesResult.ok) return categorySamplesResult;
+  if (!categorySamplesResult.ok) {
+    return categorySamplesResult;
+  }
 
   const workoutsResult = validateOptionalArray(input.workouts, "workouts", validateWorkoutRecord);
-  if (!workoutsResult.ok) return workoutsResult;
+  if (!workoutsResult.ok) {
+    return workoutsResult;
+  }
 
   const sleepResult = validateOptionalArray(input.sleep, "sleep", validateSleepRecord);
-  if (!sleepResult.ok) return sleepResult;
+  if (!sleepResult.ok) {
+    return sleepResult;
+  }
 
   for (const [name, records] of [
     ["categorySamples", categorySamplesResult.value],
@@ -133,7 +149,9 @@ export function validateHealthPayload(input: unknown): ValidationResult {
     ["sleep", sleepResult.value],
   ] as const) {
     const containedResult = validateContainedIntervals(records, name, rangeResult.value);
-    if (!containedResult.ok) return containedResult;
+    if (!containedResult.ok) {
+      return containedResult;
+    }
   }
 
   return {
@@ -154,7 +172,9 @@ export function validateHealthPayload(input: unknown): ValidationResult {
 
 export function getSourceKey(payload: HealthPayload): string {
   const deviceIdentifier = payload.source.deviceIdentifier?.trim();
-  if (deviceIdentifier) return deviceIdentifier;
+  if (deviceIdentifier) {
+    return deviceIdentifier;
+  }
 
   return payload.source.deviceName!.trim();
 }
@@ -181,7 +201,9 @@ function validateSource(input: unknown): ValidationResultFor<SourceInfo> {
     "deviceSystemName",
     "deviceSystemVersion",
   ]);
-  if (!result.ok) return result;
+  if (!result.ok) {
+    return result;
+  }
 
   const deviceIdentifier = input.deviceIdentifier?.trim();
   const deviceName = input.deviceName?.trim();
@@ -214,10 +236,14 @@ function validateRange(input: unknown): ValidationResultFor<RangeInfo> {
   }
 
   const startResult = requireIsoDateTime(input.start, "range.start");
-  if (!startResult.ok) return startResult;
+  if (!startResult.ok) {
+    return startResult;
+  }
 
   const endResult = requireIsoDateTime(input.end, "range.end");
-  if (!endResult.ok) return endResult;
+  if (!endResult.ok) {
+    return endResult;
+  }
 
   if (parseRfc3339(startResult.value)! >= parseRfc3339(endResult.value)!) {
     return invalid("range.end must be after range.start");
@@ -252,7 +278,9 @@ function validateDailyMetricRecord(
 
   const record: DailyMetricRecord = { date: input.date };
   for (const [metric, value] of Object.entries(input)) {
-    if (metric === "date") continue;
+    if (metric === "date") {
+      continue;
+    }
     if (!isQuantityValue(value)) {
       return invalid(`dailyMetrics[${index}].${metric} must have numeric value and unit`);
     }
@@ -274,10 +302,14 @@ function validateSampleRecord(input: unknown, index: number): ValidationResultFo
   }
 
   const intervalResult = validateInterval(input, `samples[${index}]`);
-  if (!intervalResult.ok) return intervalResult;
+  if (!intervalResult.ok) {
+    return intervalResult;
+  }
 
   const idResult = validateOptionalId(input.id, `samples[${index}].id`);
-  if (!idResult.ok) return idResult;
+  if (!idResult.ok) {
+    return idResult;
+  }
 
   if (typeof input.value !== "number" || !Number.isFinite(input.value)) {
     return invalid(`samples[${index}].value must be a finite number`);
@@ -311,10 +343,14 @@ function validateCategorySampleRecord(
   }
 
   const intervalResult = validateInterval(input, `categorySamples[${index}]`);
-  if (!intervalResult.ok) return intervalResult;
+  if (!intervalResult.ok) {
+    return intervalResult;
+  }
 
   const idResult = validateOptionalId(input.id, `categorySamples[${index}].id`);
-  if (!idResult.ok) return idResult;
+  if (!idResult.ok) {
+    return idResult;
+  }
 
   return {
     ok: true,
@@ -338,10 +374,14 @@ function validateWorkoutRecord(input: unknown, index: number): ValidationResultF
   }
 
   const intervalResult = validateInterval(input, `workouts[${index}]`);
-  if (!intervalResult.ok) return intervalResult;
+  if (!intervalResult.ok) {
+    return intervalResult;
+  }
 
   const idResult = validateOptionalId(input.id, `workouts[${index}].id`);
-  if (!idResult.ok) return idResult;
+  if (!idResult.ok) {
+    return idResult;
+  }
 
   for (const key of ["duration", "activeEnergy", "distance"] as const) {
     if (input[key] !== undefined && !isQuantityValue(input[key])) {
@@ -373,10 +413,14 @@ function validateSleepRecord(input: unknown, index: number): ValidationResultFor
   }
 
   const intervalResult = validateInterval(input, `sleep[${index}]`);
-  if (!intervalResult.ok) return intervalResult;
+  if (!intervalResult.ok) {
+    return intervalResult;
+  }
 
   const idResult = validateOptionalId(input.id, `sleep[${index}].id`);
-  if (!idResult.ok) return idResult;
+  if (!idResult.ok) {
+    return idResult;
+  }
 
   return {
     ok: true,
@@ -405,7 +449,9 @@ function validateOptionalArray<T>(
   const value: T[] = [];
   for (const [index, item] of input.entries()) {
     const result = validateItem(item, index);
-    if (!result.ok) return result;
+    if (!result.ok) {
+      return result;
+    }
     value.push(result.value);
   }
 
@@ -413,7 +459,9 @@ function validateOptionalArray<T>(
 }
 
 function validateOptionalId(input: unknown, path: string): ValidationResultFor<string | undefined> {
-  if (input === undefined) return { ok: true, value: undefined };
+  if (input === undefined) {
+    return { ok: true, value: undefined };
+  }
   if (!nonEmptyString(input)) {
     return invalid(`${path} must be a non-empty string when provided`);
   }
@@ -449,10 +497,14 @@ function requireIsoDateTime(input: unknown, path: string): ValidationResultFor<s
 
 function validateInterval(input: Record<string, any>, path: string): ValidationResultFor<void> {
   const startResult = requireIsoDateTime(input.start, `${path}.start`);
-  if (!startResult.ok) return startResult;
+  if (!startResult.ok) {
+    return startResult;
+  }
 
   const endResult = requireIsoDateTime(input.end, `${path}.end`);
-  if (!endResult.ok) return endResult;
+  if (!endResult.ok) {
+    return endResult;
+  }
 
   if (parseRfc3339(startResult.value)! > parseRfc3339(endResult.value)!) {
     return invalid(`${path}.end must not be before ${path}.start`);

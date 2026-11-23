@@ -36,7 +36,9 @@ beforeEach(() => {
 
 afterEach(async () => {
   await server.close();
-  if (db.open) db.close();
+  if (db.open) {
+    db.close();
+  }
 });
 
 describe("server lifecycle", () => {

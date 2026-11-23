@@ -19,13 +19,15 @@ describe("sample data", () => {
     expect(new Set(payloads.map((payload) => payload.source.deviceName))).toEqual(
       new Set(["Sample iPhone", "Sample Apple Watch"]),
     );
-    for (const key of ["samples", "sleep", "workouts"] as const)
+    for (const key of ["samples", "sleep", "workouts"] as const) {
       expect(payloads.some((payload) => payload[key].length)).toBe(true);
+    }
     // Whichever source the dashboard selects first, its overview has metrics to show.
-    for (const name of ["Sample iPhone", "Sample Apple Watch"])
+    for (const name of ["Sample iPhone", "Sample Apple Watch"]) {
       expect(payloads.some((p) => p.source.deviceName === name && p.dailyMetrics.length)).toBe(
         true,
       );
+    }
     db.close();
   });
 

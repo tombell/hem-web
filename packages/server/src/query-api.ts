@@ -146,7 +146,9 @@ const LIST_HANDLERS: Record<string, (db: HealthDatabase, params: URLSearchParams
 
 export function handleHealthQueryRequest(db: HealthDatabase, url: URL): ApiResult {
   const listHandler = LIST_HANDLERS[url.pathname];
-  if (listHandler) return listHandler(db, url.searchParams);
+  if (listHandler) {
+    return listHandler(db, url.searchParams);
+  }
 
   const importPayloadMatch = url.pathname.match(/^\/apple-health\/imports\/([1-9]\d*)\/payload$/);
   if (importPayloadMatch) {
@@ -158,7 +160,9 @@ export function handleHealthQueryRequest(db: HealthDatabase, url: URL): ApiResul
 
 function listSources(db: HealthDatabase, params: URLSearchParams): ApiResult {
   const pagination = parsePagination(params, "sources", ["string"]);
-  if (!pagination.ok) return pagination.result;
+  if (!pagination.ok) {
+    return pagination.result;
+  }
 
   const cursorClause = pagination.value.cursor ? "WHERE source_key > ?" : "";
   const cursorValues = pagination.value.cursor ?? [];
@@ -215,7 +219,9 @@ function listSources(db: HealthDatabase, params: URLSearchParams): ApiResult {
 
 function listImports(db: HealthDatabase, params: URLSearchParams): ApiResult {
   const pagination = parsePagination(params, "imports", ["number", "number"]);
-  if (!pagination.ok) return pagination.result;
+  if (!pagination.ok) {
+    return pagination.result;
+  }
 
   const built = buildWhereClause(params, {
     cursor: pagination.value.cursor,
@@ -223,7 +229,9 @@ function listImports(db: HealthDatabase, params: URLSearchParams): ApiResult {
     exactFilters: [["source_key", "sourceKey"]],
     intervalColumns: ["range_start_ms", "range_end_ms"],
   });
-  if (!built.ok) return built.result;
+  if (!built.ok) {
+    return built.result;
+  }
 
   const rows = db
     .prepare<SqlParams, PaginatedImportMetadataRow>(`
@@ -299,7 +307,9 @@ function getImportPayload(db: HealthDatabase, importId: number): ApiResult {
 
 function listDailyMetrics(db: HealthDatabase, params: URLSearchParams): ApiResult {
   const pagination = parsePagination(params, "daily-metrics", ["string", "string", "number"]);
-  if (!pagination.ok) return pagination.result;
+  if (!pagination.ok) {
+    return pagination.result;
+  }
 
   const built = buildWhereClause(params, {
     cursor: pagination.value.cursor,
@@ -310,7 +320,9 @@ function listDailyMetrics(db: HealthDatabase, params: URLSearchParams): ApiResul
       ["metric", "metric"],
     ],
   });
-  if (!built.ok) return built.result;
+  if (!built.ok) {
+    return built.result;
+  }
 
   const rows = db
     .prepare<SqlParams, DailyMetricRow>(`
@@ -341,7 +353,9 @@ function listDailyMetrics(db: HealthDatabase, params: URLSearchParams): ApiResul
 
 function listSamples(db: HealthDatabase, params: URLSearchParams): ApiResult {
   const pagination = parsePagination(params, "samples", ["number", "string", "number"]);
-  if (!pagination.ok) return pagination.result;
+  if (!pagination.ok) {
+    return pagination.result;
+  }
 
   const built = buildWhereClause(params, {
     cursor: pagination.value.cursor,
@@ -352,7 +366,9 @@ function listSamples(db: HealthDatabase, params: URLSearchParams): ApiResult {
     ],
     intervalColumns: ["start_ms", "end_ms"],
   });
-  if (!built.ok) return built.result;
+  if (!built.ok) {
+    return built.result;
+  }
 
   const rows = db
     .prepare<SqlParams, SampleRow>(`
@@ -391,7 +407,9 @@ function listCategorySamples(db: HealthDatabase, params: URLSearchParams): ApiRe
     "string",
     "number",
   ]);
-  if (!pagination.ok) return pagination.result;
+  if (!pagination.ok) {
+    return pagination.result;
+  }
 
   const built = buildWhereClause(params, {
     cursor: pagination.value.cursor,
@@ -403,7 +421,9 @@ function listCategorySamples(db: HealthDatabase, params: URLSearchParams): ApiRe
     ],
     intervalColumns: ["start_ms", "end_ms"],
   });
-  if (!built.ok) return built.result;
+  if (!built.ok) {
+    return built.result;
+  }
 
   const rows = db
     .prepare<SqlParams, CategorySampleRow>(`
@@ -436,7 +456,9 @@ function listCategorySamples(db: HealthDatabase, params: URLSearchParams): ApiRe
 
 function listWorkouts(db: HealthDatabase, params: URLSearchParams): ApiResult {
   const pagination = parsePagination(params, "workouts", ["number", "string", "number"]);
-  if (!pagination.ok) return pagination.result;
+  if (!pagination.ok) {
+    return pagination.result;
+  }
 
   const built = buildWhereClause(params, {
     cursor: pagination.value.cursor,
@@ -447,7 +469,9 @@ function listWorkouts(db: HealthDatabase, params: URLSearchParams): ApiResult {
     ],
     intervalColumns: ["start_ms", "end_ms"],
   });
-  if (!built.ok) return built.result;
+  if (!built.ok) {
+    return built.result;
+  }
 
   const rows = db
     .prepare<SqlParams, WorkoutRow>(`
@@ -486,7 +510,9 @@ function listWorkouts(db: HealthDatabase, params: URLSearchParams): ApiResult {
 
 function listSleep(db: HealthDatabase, params: URLSearchParams): ApiResult {
   const pagination = parsePagination(params, "sleep", ["number", "string", "number"]);
-  if (!pagination.ok) return pagination.result;
+  if (!pagination.ok) {
+    return pagination.result;
+  }
 
   const built = buildWhereClause(params, {
     cursor: pagination.value.cursor,
@@ -497,7 +523,9 @@ function listSleep(db: HealthDatabase, params: URLSearchParams): ApiResult {
     ],
     intervalColumns: ["start_ms", "end_ms"],
   });
-  if (!built.ok) return built.result;
+  if (!built.ok) {
+    return built.result;
+  }
 
   const rows = db
     .prepare<SqlParams, SleepRow>(`
@@ -552,7 +580,9 @@ function parsePagination(
   }
 
   const rawCursor = params.get("cursor");
-  if (rawCursor === null) return { ok: true, value: { cursor: undefined, limit } };
+  if (rawCursor === null) {
+    return { ok: true, value: { cursor: undefined, limit } };
+  }
 
   try {
     const decoded = JSON.parse(Buffer.from(rawCursor, "base64url").toString("utf8")) as unknown;
@@ -604,7 +634,9 @@ function buildWhereClause(
     const startDate = params.get("startDate");
     if (startDate !== null) {
       const result = validateDate(startDate, "startDate");
-      if (!result.ok) return result;
+      if (!result.ok) {
+        return result;
+      }
       clauses.push(`${options.dateColumn} >= ?`);
       values.push(startDate);
     }
@@ -612,7 +644,9 @@ function buildWhereClause(
     const endDate = params.get("endDate");
     if (endDate !== null) {
       const result = validateDate(endDate, "endDate");
-      if (!result.ok) return result;
+      if (!result.ok) {
+        return result;
+      }
       clauses.push(`${options.dateColumn} <= ?`);
       values.push(endDate);
     }
@@ -624,7 +658,9 @@ function buildWhereClause(
     const start = params.get("start");
     if (start !== null) {
       const result = validateDateTime(start, "start");
-      if (!result.ok) return result;
+      if (!result.ok) {
+        return result;
+      }
       clauses.push(`${endColumn} > ?`);
       values.push(result.value);
     }
@@ -632,7 +668,9 @@ function buildWhereClause(
     const end = params.get("end");
     if (end !== null) {
       const result = validateDateTime(end, "end");
-      if (!result.ok) return result;
+      if (!result.ok) {
+        return result;
+      }
       clauses.push(`${startColumn} < ?`);
       values.push(result.value);
     }
@@ -652,7 +690,9 @@ function addExactFilter(
   column: string,
   value: string | null,
 ): void {
-  if (value === null || value.trim() === "") return;
+  if (value === null || value.trim() === "") {
+    return;
+  }
   clauses.push(`${column} = ?`);
   values.push(value);
 }
@@ -710,10 +750,18 @@ function importSource(
   >,
 ) {
   const source: Record<string, string> = {};
-  if (row.source_app !== null) source.app = row.source_app;
-  if (row.source_bundle_identifier !== null) source.bundleIdentifier = row.source_bundle_identifier;
-  if (row.source_device_identifier !== null) source.deviceIdentifier = row.source_device_identifier;
-  if (row.source_device_name !== null) source.deviceName = row.source_device_name;
+  if (row.source_app !== null) {
+    source.app = row.source_app;
+  }
+  if (row.source_bundle_identifier !== null) {
+    source.bundleIdentifier = row.source_bundle_identifier;
+  }
+  if (row.source_device_identifier !== null) {
+    source.deviceIdentifier = row.source_device_identifier;
+  }
+  if (row.source_device_name !== null) {
+    source.deviceName = row.source_device_name;
+  }
   return source;
 }
 
@@ -793,7 +841,9 @@ function quantity(
   value: number | null,
   unit: string | null,
 ): { unit: string; value: number } | null {
-  if (value === null || unit === null) return null;
+  if (value === null || unit === null) {
+    return null;
+  }
   return { unit, value };
 }
 

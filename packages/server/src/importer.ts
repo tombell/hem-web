@@ -207,7 +207,9 @@ function insertNormalizedFacts(
 
   for (const dailyMetric of payload.dailyMetrics) {
     for (const [metric, quantity] of Object.entries(dailyMetric)) {
-      if (metric === "date" || !isQuantityValue(quantity)) continue;
+      if (metric === "date" || !isQuantityValue(quantity)) {
+        continue;
+      }
       statements.upsertDailyMetric.run(
         sourceKey,
         dailyMetric.date,

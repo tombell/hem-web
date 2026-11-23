@@ -68,7 +68,9 @@ export function Dashboard({
   const dates = useMemo(() => rangeDays(start, end), [start, end]);
   const endpoint = view === "Overview" || view === "Metrics" ? "daily-metrics" : view.toLowerCase();
   const request = useMemo(() => {
-    if (!sourceKey || !dates.length) return undefined;
+    if (!sourceKey || !dates.length) {
+      return undefined;
+    }
     const filters: Record<string, string> =
       endpoint === "daily-metrics"
         ? { sourceKey, startDate: start, endDate: end }
@@ -83,7 +85,9 @@ export function Dashboard({
   const result = useStore(request?.$store ?? session.$sources);
   const cause = result.error ?? sourceResult.error;
   useEffect(() => {
-    if (cause instanceof ApiError && cause.status === 401) disconnect(cause.message);
+    if (cause instanceof ApiError && cause.status === 401) {
+      disconnect(cause.message);
+    }
   }, [cause]);
   const source = sources.find((row) => row.sourceKey === sourceKey);
   const data = result.data

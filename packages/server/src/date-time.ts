@@ -4,7 +4,9 @@ const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/u;
 
 export function parseRfc3339(value: string): number | undefined {
   const match = value.match(RFC3339_PATTERN);
-  if (!match) return undefined;
+  if (!match) {
+    return undefined;
+  }
 
   const [, year, month, day, hour, minute, second, offsetHour, offsetMinute] = match;
   if (
@@ -38,7 +40,9 @@ export function requireEpochMilliseconds(value: string): number {
 }
 
 function isValidCalendarDate(year: number, month: number, day: number): boolean {
-  if (year < 1 || month < 1 || month > 12 || day < 1) return false;
+  if (year < 1 || month < 1 || month > 12 || day < 1) {
+    return false;
+  }
 
   const daysInMonth = [31, isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   return day <= daysInMonth[month - 1];

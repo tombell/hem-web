@@ -15,7 +15,9 @@ export interface ParsedJsonBody {
 export function isAuthorized(request: FastifyRequest, bearerToken: string): boolean {
   const authorization = request.headers.authorization;
   const match = authorization?.match(/^Bearer\s+(.+)$/i);
-  if (!match) return false;
+  if (!match) {
+    return false;
+  }
 
   const actual = Buffer.from(match[1]);
   const expected = Buffer.from(bearerToken);

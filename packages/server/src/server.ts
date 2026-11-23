@@ -53,7 +53,9 @@ export function createHealthImportServer({
 
   if (closeDatabaseOnClose) {
     server.addHook("onClose", async () => {
-      if (db.open) db.close();
+      if (db.open) {
+        db.close();
+      }
     });
   }
 
@@ -127,7 +129,9 @@ export async function startServer(
 
   try {
     server = createHealthImportServer({ closeDatabaseOnClose: true, config, db });
-    if (options.registerSignalHandlers) registerGracefulShutdown(server);
+    if (options.registerSignalHandlers) {
+      registerGracefulShutdown(server);
+    }
 
     await server.listen({ host: config.host, port: config.port });
     const address = server.server.address();
@@ -144,8 +148,12 @@ export async function startServer(
 
     return server;
   } catch (error) {
-    if (server) await server.close().catch(() => undefined);
-    if (db.open) db.close();
+    if (server) {
+      await server.close().catch(() => undefined);
+    }
+    if (db.open) {
+      db.close();
+    }
     throw error;
   }
 }
@@ -154,7 +162,9 @@ function registerGracefulShutdown(server: FastifyInstance): void {
   let shuttingDown = false;
 
   const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
-    if (shuttingDown) return;
+    if (shuttingDown) {
+      return;
+    }
     shuttingDown = true;
     console.info(JSON.stringify({ event: "server_stopping", signal }));
 

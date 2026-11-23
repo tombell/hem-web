@@ -50,8 +50,12 @@ export function migrateDatabase(db: HealthDatabase, targetVersion = LATEST_DATAB
 
   let migratedVersion = currentVersion;
   for (const migration of DATABASE_MIGRATIONS) {
-    if (migration.version <= migratedVersion) continue;
-    if (migration.version > targetVersion) break;
+    if (migration.version <= migratedVersion) {
+      continue;
+    }
+    if (migration.version > targetVersion) {
+      break;
+    }
     if (migration.version !== migratedVersion + 1) {
       throw new Error(`Missing database migration after version ${migratedVersion}`);
     }

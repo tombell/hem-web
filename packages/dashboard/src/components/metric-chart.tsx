@@ -13,23 +13,33 @@ export function runs(dates: string[], values: Map<string, number>): Point[][] {
   dates.forEach((date, index) => {
     const value = values.get(date);
     if (value === undefined) {
-      if (current.length) result.push(current);
+      if (current.length) {
+        result.push(current);
+      }
       current = [];
-    } else current.push({ index, value });
+    } else {
+      current.push({ index, value });
+    }
   });
-  if (current.length) result.push(current);
+  if (current.length) {
+    result.push(current);
+  }
   return result;
 }
 
 function niceTicks(min: number, max: number) {
-  if (max === min) max = min + 1;
+  if (max === min) {
+    max = min + 1;
+  }
   const rough = (max - min) / 4;
   const magnitude = 10 ** Math.floor(Math.log10(rough));
   const step = [1, 2, 2.5, 5, 10].find((factor) => factor * magnitude >= rough)! * magnitude;
   const lo = Math.floor(min / step) * step;
   const hi = Math.ceil(max / step) * step;
   const ticks: number[] = [];
-  for (let tick = lo; tick <= hi + step / 2; tick += step) ticks.push(+tick.toPrecision(12));
+  for (let tick = lo; tick <= hi + step / 2; tick += step) {
+    ticks.push(+tick.toPrecision(12));
+  }
   return { lo, hi, ticks };
 }
 
@@ -68,7 +78,9 @@ export function MetricChart({
   const [W, setWidth] = useState(920);
   useLayoutEffect(() => {
     const element = frame.current!;
-    if (typeof ResizeObserver === "undefined") return;
+    if (typeof ResizeObserver === "undefined") {
+      return;
+    }
     const observer = new ResizeObserver(() => setWidth(element.clientWidth || 920));
     observer.observe(element);
     return () => observer.disconnect();
@@ -234,7 +246,9 @@ export function MetricChart({
           })}
           {dates.map((date, i) => {
             const value = values.get(date);
-            if (value === undefined || (band < 12 && i !== active)) return null;
+            if (value === undefined || (band < 12 && i !== active)) {
+              return null;
+            }
             return (
               <circle
                 key={date}

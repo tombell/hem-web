@@ -51,8 +51,12 @@ export function Connect({
             pending.session = session;
             try {
               const result = await session.$sources.fetch();
-              if (pending.session !== session) return;
-              if ("error" in result) throw result.error;
+              if (pending.session !== session) {
+                return;
+              }
+              if ("error" in result) {
+                throw result.error;
+              }
               pending.session = undefined;
               onConnect(session, result.data);
             } catch (cause) {

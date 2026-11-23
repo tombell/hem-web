@@ -25,8 +25,11 @@ function hourTicks(first: number, last: number) {
   const start = new Date(first);
   start.setMinutes(0, 0, 0);
   const ticks: number[] = [];
-  for (let tick = +start + hour; tick < last; tick += hour)
-    if (new Date(tick).getHours() % (step / hour) === 0) ticks.push(tick);
+  for (let tick = +start + hour; tick < last; tick += hour) {
+    if (new Date(tick).getHours() % (step / hour) === 0) {
+      ticks.push(tick);
+    }
+  }
   return ticks;
 }
 
