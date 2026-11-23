@@ -30,7 +30,6 @@ export default defineConfig({
       "typescript/no-unsafe-member-access": "off",
       "typescript/no-unsafe-return": "off",
       "typescript/no-unsafe-type-assertion": "off",
-      "quality/no-conditional-empty-object-spread": "off",
       "quality/no-known-value-widening": "off",
       "quality/no-unsafe-dictionary-type": "off",
     },
