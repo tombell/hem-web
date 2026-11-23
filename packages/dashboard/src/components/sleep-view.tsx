@@ -1,7 +1,8 @@
 /** @jsxImportSource preact */
 import { Fragment } from "preact";
 
-import { day, label, type Sleep } from "../data";
+import { day, label } from "../data";
+import type { Sleep } from "../data";
 import { calendarDate, dateTime, time } from "../date-time";
 import { DataTable } from "./data-table";
 

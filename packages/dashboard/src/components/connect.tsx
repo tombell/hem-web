@@ -2,7 +2,8 @@
 import { useEffect, useState } from "preact/hooks";
 
 import type { Source } from "../data";
-import { createSession, type Session } from "../queries";
+import { createSession } from "../queries";
+import type { Session } from "../queries";
 import { Brand } from "./brand";
 
 export function Connect({

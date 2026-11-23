@@ -1,13 +1,7 @@
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 
-import {
-  ApiError,
-  collection,
-  metricSeries,
-  rangeDays,
-  timestampRange,
-  type DailyMetric,
-} from "./data";
+import { ApiError, collection, metricSeries, rangeDays, timestampRange } from "./data";
+import type { DailyMetric } from "./data";
 
 afterEach(() => vi.unstubAllGlobals());
 

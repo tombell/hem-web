@@ -5,12 +5,8 @@ import { join } from "node:path";
 import Database from "better-sqlite3";
 import { afterEach, describe, expect, test } from "vite-plus/test";
 
-import {
-  LATEST_DATABASE_VERSION,
-  migrateDatabase,
-  openDatabase,
-  type HealthDatabase,
-} from "../src/db";
+import { LATEST_DATABASE_VERSION, migrateDatabase, openDatabase } from "../src/db";
+import type { HealthDatabase } from "../src/db";
 
 let temporaryDirectory: string | undefined;
 

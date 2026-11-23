@@ -18,7 +18,6 @@ export default defineConfig({
       // Temporarily off while migrating to @cloudflare/oxlint-config.
       // Enable each rule with its fixes in a separate commit.
       "unicorn/catch-error-name": "off",
-      "import/consistent-type-specifier-style": "off",
       "react/button-has-type": "off",
       "react/immutability": "off",
       "react/purity": "off",

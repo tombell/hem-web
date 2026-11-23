@@ -4,7 +4,8 @@ import type { LightMyRequestResponse } from "fastify";
 import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
 
 import type { AppConfig } from "../src/config";
-import { openDatabase, type HealthDatabase } from "../src/db";
+import { openDatabase } from "../src/db";
+import type { HealthDatabase } from "../src/db";
 import openApiDocument from "../src/openapi.json" with { type: "json" };
 import { createHealthImportServer } from "../src/server";
 

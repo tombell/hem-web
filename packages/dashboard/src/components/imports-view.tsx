@@ -1,5 +1,5 @@
 /** @jsxImportSource preact */
-import { type Import } from "../data";
+import type { Import } from "../data";
 import { dateTime } from "../date-time";
 import { DataTable } from "./data-table";
 import { Empty } from "./empty";

@@ -1,5 +1,6 @@
 /** @jsxImportSource preact */
-import { label, quantity, type Workout } from "../data";
+import { label, quantity } from "../data";
+import type { Workout } from "../data";
 import { dateTime } from "../date-time";
 import { DataTable } from "./data-table";
 import { Empty } from "./empty";
