@@ -1,7 +1,8 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { loadEnvFiles, type Env } from "./env.ts";
+import { loadEnvFiles } from "./env.ts";
+import type { Env } from "./env.ts";
 
 export interface AppConfig {
   bearerToken: string;

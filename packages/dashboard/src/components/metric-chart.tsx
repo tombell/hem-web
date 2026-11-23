@@ -1,7 +1,8 @@
 /** @jsxImportSource preact */
 import { useId, useLayoutEffect, useRef, useState } from "preact/hooks";
 
-import { number, unitLabel, type DailyMetric } from "../data";
+import { number, unitLabel } from "../data";
+import type { DailyMetric } from "../data";
 import { calendarDate } from "../date-time";
 
 type Point = { index: number; value: number };

@@ -1,7 +1,9 @@
-import { nanoquery, type NanoqueryArgs } from "@nanostores/query";
+import { nanoquery } from "@nanostores/query";
+import type { NanoqueryArgs } from "@nanostores/query";
 import { atom } from "nanostores";
 
-import { collection, type Source } from "./data";
+import { collection } from "./data";
+import type { Source } from "./data";
 
 /** Credentials and cached health records belong to one connection only. */
 export function createSession(token: string) {

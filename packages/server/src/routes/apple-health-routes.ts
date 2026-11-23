@@ -10,11 +10,10 @@ import {
   isAuthorized,
   isJsonRequest,
   logError,
-  type MetadataLogger,
-  type ParsedJsonBody,
   registerMethodNotAllowed,
   sendJson,
 } from "./shared.ts";
+import type { MetadataLogger, ParsedJsonBody } from "./shared.ts";
 
 interface AppleHealthRouteDependencies {
   config: AppConfig;

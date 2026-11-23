@@ -1,7 +1,8 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
-import Database, { type Database as HealthDatabase } from "better-sqlite3";
+import Database from "better-sqlite3";
+import type { Database as HealthDatabase } from "better-sqlite3";
 
 import { parseRfc3339 } from "./date-time.ts";
 

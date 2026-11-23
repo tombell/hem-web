@@ -2,18 +2,8 @@ import { useStore } from "@nanostores/preact";
 /** @jsxImportSource preact */
 import { useEffect, useMemo, useState } from "preact/hooks";
 
-import {
-  ApiError,
-  sourceName,
-  day,
-  rangeDays,
-  timestampRange,
-  type DailyMetric,
-  type Import,
-  type Sleep,
-  type Source,
-  type Workout,
-} from "../data";
+import { ApiError, sourceName, day, rangeDays, timestampRange } from "../data";
+import type { DailyMetric, Import, Sleep, Source, Workout } from "../data";
 import { dateTime } from "../date-time";
 import { useFilters } from "../hooks/use-filters";
 import type { Session } from "../queries";

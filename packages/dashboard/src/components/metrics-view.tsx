@@ -1,5 +1,6 @@
 /** @jsxImportSource preact */
-import { label, metricSeries, number, unitLabel, type DailyMetric } from "../data";
+import { label, metricSeries, number, unitLabel } from "../data";
+import type { DailyMetric } from "../data";
 import { calendarDate } from "../date-time";
 import { DataTable } from "./data-table";
 import { Empty } from "./empty";
