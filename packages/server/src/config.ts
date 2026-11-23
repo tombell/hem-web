@@ -1,5 +1,4 @@
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 
 import { loadEnvFiles } from "./env.ts";
 import type { Env } from "./env.ts";
@@ -16,7 +15,7 @@ export interface AppConfig {
   rateLimitWindowMs: number;
 }
 
-const DEFAULT_DB_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "../data/hem.sqlite");
+const DEFAULT_DB_PATH = resolve(import.meta.dirname, "../data/hem.sqlite");
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_MAX_BODY_BYTES = 5_242_880;
 const DEFAULT_PORT = 3000;
