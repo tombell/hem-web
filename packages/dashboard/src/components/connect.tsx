@@ -24,6 +24,32 @@ export function Connect({
     },
     [pendingRef],
   );
+  async function connect() {
+    setBusy(true);
+    setError("");
+    pendingRef.current?.dispose();
+    const session = createSession(value.trim());
+    pendingRef.current = session;
+    try {
+      const result = await session.$sources.fetch();
+      if (pendingRef.current !== session) {
+        return;
+      }
+      if ("error" in result) {
+        throw result.error;
+      }
+      pendingRef.current = undefined;
+      onConnect(session, result.data);
+    } catch (error_) {
+      if (pendingRef.current === session) {
+        setError(error_ instanceof Error ? error_.message : "Connection failed.");
+        session.dispose();
+        pendingRef.current = undefined;
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <main class="grid min-h-screen place-items-center p-6">
       <div class="w-full max-w-md">
@@ -43,32 +69,9 @@ export function Connect({
         </p>
         <form
           class="panel tape mt-10 space-y-5"
-          onSubmit={async (event) => {
+          onSubmit={(event) => {
             event.preventDefault();
-            setBusy(true);
-            setError("");
-            pendingRef.current?.dispose();
-            const session = createSession(value.trim());
-            pendingRef.current = session;
-            try {
-              const result = await session.$sources.fetch();
-              if (pendingRef.current !== session) {
-                return;
-              }
-              if ("error" in result) {
-                throw result.error;
-              }
-              pendingRef.current = undefined;
-              onConnect(session, result.data);
-            } catch (error_) {
-              if (pendingRef.current === session) {
-                setError(error_ instanceof Error ? error_.message : "Connection failed.");
-                session.dispose();
-                pendingRef.current = undefined;
-              }
-            } finally {
-              setBusy(false);
-            }
+            void connect();
           }}
         >
           <label class="block font-hand text-xl font-semibold">
