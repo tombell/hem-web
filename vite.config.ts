@@ -18,7 +18,6 @@ export default defineConfig({
       // Temporarily off while migrating to @cloudflare/oxlint-config.
       // Enable each rule with its fixes in a separate commit.
       "react/purity": "off",
-      "react-hooks/exhaustive-deps": "off",
       "typescript/no-explicit-any": "off",
       "typescript/no-floating-promises": "off",
       "typescript/no-misused-promises": "off",
