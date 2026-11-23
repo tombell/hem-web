@@ -1,7 +1,6 @@
 // Rebuilds data/sample.sqlite with fictional health data for dashboard development.
 import { rmSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 
 import { openDatabase } from "../src/db.ts";
@@ -23,7 +22,7 @@ if (!Number.isInteger(seed)) {
   throw new Error("--seed must be an integer");
 }
 
-const dbPath = resolve(dirname(fileURLToPath(import.meta.url)), "../data/sample.sqlite");
+const dbPath = resolve(import.meta.dirname, "../data/sample.sqlite");
 for (const suffix of ["", "-wal", "-shm"]) {
   rmSync(`${dbPath}${suffix}`, { force: true });
 }
