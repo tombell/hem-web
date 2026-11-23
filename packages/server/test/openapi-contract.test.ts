@@ -33,7 +33,6 @@ const MINIMAL_PAYLOAD = {
   source: { deviceName: "Contract Test iPhone" },
 };
 
-const document = openApiDocument as any;
 const ajv = new Ajv2020({ allErrors: true, strict: false });
 addFormats(ajv);
 
@@ -54,13 +53,15 @@ afterEach(async () => {
 
 describe("OpenAPI runtime contract", () => {
   test("resolves every local reference and has unique operation IDs", () => {
-    const references = collectValues(document, "$ref") as Array<string>;
+    const references = collectValues(openApiDocument, "$ref").filter(
+      (value): value is string => typeof value === "string",
+    );
     for (const reference of references.filter((value) => value.startsWith("#/"))) {
       expect(resolveReference({ $ref: reference }), reference).toBeDefined();
     }
 
-    const operationIds = Object.values(document.paths).flatMap((path: any) =>
-      Object.values(path).flatMap((operation: any) => operation.operationId ?? []),
+    const operationIds = valuesOf(openApiDocument.paths).flatMap((pathItem) =>
+      valuesOf(pathItem).flatMap((operation) => at(operation, "operationId") ?? []),
     );
     expect(operationIds).toHaveLength(13);
     expect(new Set(operationIds).size).toBe(operationIds.length);
@@ -148,28 +149,48 @@ function expectResponse(
   response: LightMyRequestResponse,
 ): void {
   const responseDefinition = resolveReference(
-    document.paths[path][method].responses[String(response.statusCode)],
+    at(openApiDocument.paths, path, method, "responses", String(response.statusCode)),
   );
   expect(
     responseDefinition,
     `${method.toUpperCase()} ${path} ${response.statusCode}`,
   ).toBeDefined();
-  expectSchema(responseDefinition.content["application/json"].schema, response.json());
+  expectSchema(at(responseDefinition, "content", "application/json", "schema"), response.json());
 }
 
-function expectSchema(schema: Record<string, unknown>, value: unknown): void {
-  const validate = ajv.compile({ components: document.components, ...schema });
+function expectSchema(schema: unknown, value: unknown): void {
+  if (typeof schema !== "object" || schema === null) {
+    throw new Error("Missing schema");
+  }
+  const validate = ajv.compile({ components: openApiDocument.components, ...schema });
   expect(validate(value), JSON.stringify(validate.errors)).toBe(true);
 }
 
-function resolveReference(value: any): any {
-  if (!value?.$ref) {
+// The OpenAPI document is walked as untyped JSON.
+// eslint-disable-next-line quality/no-unknown-returns
+function resolveReference(value: unknown): unknown {
+  const reference = at(value, "$ref");
+  if (typeof reference !== "string") {
     return value;
   }
-  return value.$ref
-    .slice(2)
-    .split("/")
-    .reduce((current: any, segment: string) => current[segment], document);
+  return at(openApiDocument, ...reference.slice(2).split("/"));
+}
+
+// The OpenAPI document is walked as untyped JSON.
+// eslint-disable-next-line quality/no-unknown-returns
+function at(value: unknown, ...path: Array<string>): unknown {
+  let current = value;
+  for (const segment of path) {
+    if (typeof current !== "object" || current === null || !Object.hasOwn(current, segment)) {
+      return undefined;
+    }
+    current = new Map(Object.entries(current)).get(segment);
+  }
+  return current;
+}
+
+function valuesOf(value: unknown): Array<unknown> {
+  return typeof value === "object" && value !== null ? Object.values(value) : [];
 }
 
 function collectValues(value: unknown, key: string): Array<unknown> {
