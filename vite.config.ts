@@ -18,7 +18,6 @@ export default defineConfig({
       // Temporarily off while migrating to @cloudflare/oxlint-config.
       // Enable each rule with its fixes in a separate commit.
       "typescript/no-non-null-assertion": "off",
-      "typescript/no-unsafe-assignment": "off",
       "typescript/no-unsafe-type-assertion": "off",
       "quality/no-unsafe-dictionary-type": "off",
     },

@@ -5,6 +5,7 @@ import { parseArgs } from "node:util";
 
 import { openDatabase } from "../src/db.ts";
 import { importHealthPayload } from "../src/importer.ts";
+import type { ImportCounts } from "../src/importer.ts";
 import { validateHealthPayload } from "../src/payload.ts";
 import { samplePayloads } from "../src/sample-data.ts";
 
@@ -28,7 +29,13 @@ for (const suffix of ["", "-wal", "-shm"]) {
 }
 
 const db = openDatabase(dbPath);
-const totals: Record<string, number> = {};
+const totals: ImportCounts = {
+  categorySamples: 0,
+  dailyMetrics: 0,
+  samples: 0,
+  sleep: 0,
+  workouts: 0,
+};
 let imports = 0;
 for (const payload of samplePayloads({ days, seed })) {
   // Round-trip through JSON to validate the payload as the API receives it.
@@ -39,9 +46,11 @@ for (const payload of samplePayloads({ days, seed })) {
   }
   const raw = JSON.stringify(result.payload);
   const { counts } = importHealthPayload(db, result.payload, raw);
-  for (const [key, count] of Object.entries(counts)) {
-    totals[key] = (totals[key] ?? 0) + count;
-  }
+  totals.categorySamples += counts.categorySamples;
+  totals.dailyMetrics += counts.dailyMetrics;
+  totals.samples += counts.samples;
+  totals.sleep += counts.sleep;
+  totals.workouts += counts.workouts;
   imports++;
 }
 db.close();
