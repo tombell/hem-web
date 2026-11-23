@@ -1,5 +1,5 @@
 /** @jsxImportSource preact */
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import type { Source } from "../data";
 import { createSession } from "../queries";
@@ -16,13 +16,13 @@ export function Connect({
   const [value, setValue] = useState("");
   const [error, setError] = useState(notice);
   const [busy, setBusy] = useState(false);
-  const [pending] = useState(() => ({ session: undefined as Session | undefined }));
+  const pendingRef = useRef<Session | undefined>(undefined);
   useEffect(
     () => () => {
-      pending.session?.dispose();
-      pending.session = undefined;
+      pendingRef.current?.dispose();
+      pendingRef.current = undefined;
     },
-    [pending],
+    [pendingRef],
   );
   return (
     <main class="grid min-h-screen place-items-center p-6">
@@ -47,24 +47,24 @@ export function Connect({
             event.preventDefault();
             setBusy(true);
             setError("");
-            pending.session?.dispose();
+            pendingRef.current?.dispose();
             const session = createSession(value.trim());
-            pending.session = session;
+            pendingRef.current = session;
             try {
               const result = await session.$sources.fetch();
-              if (pending.session !== session) {
+              if (pendingRef.current !== session) {
                 return;
               }
               if ("error" in result) {
                 throw result.error;
               }
-              pending.session = undefined;
+              pendingRef.current = undefined;
               onConnect(session, result.data);
             } catch (error_) {
-              if (pending.session === session) {
+              if (pendingRef.current === session) {
                 setError(error_ instanceof Error ? error_.message : "Connection failed.");
                 session.dispose();
-                pending.session = undefined;
+                pendingRef.current = undefined;
               }
             } finally {
               setBusy(false);
