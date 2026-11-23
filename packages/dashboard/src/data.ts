@@ -78,12 +78,12 @@ export function rangeDays(start: string, end: string): Array<string> {
   ) {
     return [];
   }
-  const count = Math.round((+last - +first) / 86400000) + 1;
+  const count = Math.round((+last - +first) / 86_400_000) + 1;
   if (count < 1 || count > 366) {
     return [];
   }
   return Array.from({ length: count }, (_, i) =>
-    new Date(+first + i * 86400000).toISOString().slice(0, 10),
+    new Date(+first + i * 86_400_000).toISOString().slice(0, 10),
   );
 }
 export function timestampRange(start: string, end: string): { start: string; end: string } {

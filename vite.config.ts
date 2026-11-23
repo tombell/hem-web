@@ -35,7 +35,6 @@ export default defineConfig({
       "typescript/no-unsafe-type-assertion": "off",
       "typescript/require-array-sort-compare": "off",
       "typescript/return-await": "off",
-      "unicorn/numeric-separators-style": "off",
       "unicorn/prefer-import-meta-properties": "off",
       "unicorn/prefer-string-raw": "off",
       "unicorn/prefer-string-replace-all": "off",

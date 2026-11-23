@@ -14,7 +14,7 @@ const BASE_CONFIG: AppConfig = {
   maxBodyBytes: 5_242_880,
   port: 0,
   publicUrl: "https://hem.example.test",
-  rateLimitMax: 1_000,
+  rateLimitMax: 1000,
   rateLimitWindowMs: 60_000,
 };
 
@@ -798,7 +798,7 @@ describe("POST /apple-health/import", () => {
 
   test("does not log health payload values", async () => {
     const payload = validPayload();
-    (payload.dailyMetrics[0].steps as QuantityValue).value = 123456789;
+    (payload.dailyMetrics[0].steps as QuantityValue).value = 123_456_789;
 
     const response = await postPayload(payload);
 
