@@ -15,8 +15,8 @@ export default defineConfig({
       // Preact uses DOM attribute names such as `class` and `for`.
       "react/no-unknown-property": "off",
 
-      // Temporarily off while migrating to @cloudflare/oxlint-config.
-      // Enable each rule with its fixes in a separate commit.
+      // Payload parsing, log events, JSON response bodies, and test helpers
+      // handle objects whose values are unknown until they are checked.
       "quality/no-unsafe-dictionary-type": "off",
     },
     overrides: [
