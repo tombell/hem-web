@@ -31,7 +31,6 @@ export default defineConfig({
       "typescript/no-unsafe-member-access": "off",
       "typescript/no-unsafe-return": "off",
       "typescript/no-unsafe-type-assertion": "off",
-      "typescript/return-await": "off",
       "quality/no-array-filter-map": "off",
       "quality/no-conditional-empty-object-spread": "off",
       "quality/no-known-value-widening": "off",
