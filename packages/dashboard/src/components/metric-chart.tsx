@@ -34,7 +34,7 @@ function niceTicks(min: number, max: number) {
   }
   const rough = (max - min) / 4;
   const magnitude = 10 ** Math.floor(Math.log10(rough));
-  const step = [1, 2, 2.5, 5, 10].find((factor) => factor * magnitude >= rough)! * magnitude;
+  const step = ([1, 2, 2.5, 5].find((factor) => factor * magnitude >= rough) ?? 10) * magnitude;
   const lo = Math.floor(min / step) * step;
   const hi = Math.ceil(max / step) * step;
   const ticks: Array<number> = [];
@@ -78,8 +78,8 @@ export function MetricChart({
   const frame = useRef<HTMLDivElement>(null);
   const [W, setWidth] = useState(920);
   useLayoutEffect(() => {
-    const element = frame.current!;
-    if (typeof ResizeObserver === "undefined") {
+    const element = frame.current;
+    if (!element || typeof ResizeObserver === "undefined") {
       return;
     }
     const observer = new ResizeObserver(() => setWidth(element.clientWidth || 920));
@@ -105,6 +105,10 @@ export function MetricChart({
     dates.map((_, i) => i).filter((i) => (dates.length - 1 - i) % labelStep === 0),
   );
   const activeDate = active === undefined ? undefined : dates[active];
+  const describe = (date: string) => {
+    const value = values.get(date);
+    return value === undefined ? "no record" : `${number.format(value)} ${unit}`;
+  };
   const activeValue = activeDate === undefined ? undefined : values.get(activeDate);
   const missing = dates.some((date) => !values.has(date));
   return (
@@ -276,19 +280,18 @@ export function MetricChart({
               onPointerEnter={() => setActive(i)}
             >
               <title>
-                {date}:{" "}
-                {values.has(date) ? `${number.format(values.get(date)!)} ${unit}` : "no record"}
+                {date}: {describe(date)}
               </title>
             </rect>
           ))}
         </svg>
-        {activeDate !== undefined && (
+        {active !== undefined && activeDate !== undefined && (
           <div
             aria-hidden="true"
             class="pointer-events-none absolute top-0 rotate-[-1.5deg] border-2 border-ink bg-hl-yellow px-3 py-1.5 whitespace-nowrap shadow-[3px_4px_0_rgb(35_40_58/0.18)]"
             style={{
-              left: `${(x(active!) / W) * 100}%`,
-              transform: `translateX(${active! > dates.length / 2 ? "calc(-100% - 12px)" : "12px"})`,
+              left: `${(x(active) / W) * 100}%`,
+              transform: `translateX(${active > dates.length / 2 ? "calc(-100% - 12px)" : "12px"})`,
             }}
           >
             <p class="font-hand text-lg leading-none font-semibold">{calendarDate(activeDate)}</p>

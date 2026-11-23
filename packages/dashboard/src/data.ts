@@ -105,10 +105,12 @@ export function metricSeries(rows: Array<DailyMetric>) {
   >();
   for (const row of rows) {
     const key = JSON.stringify([row.metric, row.unit]);
-    if (!groups.has(key)) {
-      groups.set(key, { key, metric: row.metric, unit: row.unit, rows: [] });
+    let group = groups.get(key);
+    if (!group) {
+      group = { key, metric: row.metric, unit: row.unit, rows: [] };
+      groups.set(key, group);
     }
-    groups.get(key)!.rows.push(row);
+    group.rows.push(row);
   }
   return [...groups.values()].toSorted((a, b) => a.metric.localeCompare(b.metric));
 }

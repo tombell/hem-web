@@ -176,7 +176,7 @@ export function getSourceKey(payload: HealthPayload): string {
     return deviceIdentifier;
   }
 
-  return payload.source.deviceName!.trim();
+  return (payload.source.deviceName ?? "").trim();
 }
 
 export function isQuantityValue(value: unknown): value is QuantityValue {
@@ -241,7 +241,7 @@ function validateRange(input: unknown): ValidationResultFor<RangeInfo> {
     return endResult;
   }
 
-  if (parseRfc3339(startResult.value)! >= parseRfc3339(endResult.value)!) {
+  if (timeOf(startResult.value) >= timeOf(endResult.value)) {
     return invalid("range.end must be after range.start");
   }
 
@@ -544,7 +544,7 @@ function validateInterval(
     return endResult;
   }
 
-  if (parseRfc3339(startResult.value)! > parseRfc3339(endResult.value)!) {
+  if (timeOf(startResult.value) > timeOf(endResult.value)) {
     return invalid(`${path}.end must not be before ${path}.start`);
   }
 
@@ -556,16 +556,25 @@ function validateContainedIntervals(
   name: string,
   range: RangeInfo,
 ): ValidationResultFor<void> {
-  const rangeStart = parseRfc3339(range.start)!;
-  const rangeEnd = parseRfc3339(range.end)!;
+  const rangeStart = timeOf(range.start);
+  const rangeEnd = timeOf(range.end);
 
   for (const [index, record] of records.entries()) {
-    if (parseRfc3339(record.start)! < rangeStart || parseRfc3339(record.end)! > rangeEnd) {
+    if (timeOf(record.start) < rangeStart || timeOf(record.end) > rangeEnd) {
       return invalid(`${name}[${index}] must be contained within range`);
     }
   }
 
   return { ok: true, value: undefined };
+}
+
+// Only for timestamps that requireIsoDateTime has accepted.
+function timeOf(value: string): number {
+  const time = parseRfc3339(value);
+  if (time === undefined) {
+    throw new Error(`Invalid timestamp: ${value}`);
+  }
+  return time;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
