@@ -51,8 +51,12 @@ export function Dashboard({
   const sourceKey = sources.some((source) => source.sourceKey === params.get("source"))
     ? params.get("source")!
     : sources[0]?.sourceKey || "";
-  const end = params.get("end") ?? day(new Date());
-  const weekStart = new Date();
+  // Default dates follow the current day whenever the dashboard renders.
+  // eslint-disable-next-line react/purity
+  const now = new Date();
+  const today = day(now);
+  const end = params.get("end") ?? today;
+  const weekStart = new Date(now);
   weekStart.setDate(weekStart.getDate() - 6);
   const start = params.get("start") ?? day(weekStart);
   const dates = useMemo(() => rangeDays(start, end), [start, end]);
@@ -89,7 +93,6 @@ export function Dashboard({
       }
     : undefined;
   const error = cause?.message;
-  const today = day(new Date());
   const activePreset = end === today ? dates.length : 0;
   function preset(days: number) {
     const last = new Date();
