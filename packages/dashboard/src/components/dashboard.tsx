@@ -107,6 +107,7 @@ export function Dashboard({
         <div class="flex items-center justify-between lg:px-1">
           <Brand />
           <button
+            type="button"
             class="flex items-center gap-1.5 font-hand text-lg font-semibold text-muted hover:text-danger lg:hidden"
             onClick={() => disconnect()}
           >
@@ -120,6 +121,7 @@ export function Dashboard({
         >
           {views.map((item) => (
             <button
+              type="button"
               key={item}
               aria-current={view === item ? "page" : undefined}
               onClick={() => update({ view: item })}
@@ -140,6 +142,7 @@ export function Dashboard({
             Recorded data from your selected source. No inferred health scores.
           </p>
           <button
+            type="button"
             class="mt-2 flex w-full items-center gap-2.5 px-3 py-1.5 font-hand text-xl font-semibold text-muted hover:text-danger"
             onClick={() => disconnect()}
           >
@@ -172,7 +175,7 @@ export function Dashboard({
                       : "See what arrived and which dates it covers."}
             </p>
           </div>
-          <button class="button" onClick={reload}>
+          <button type="button" class="button" onClick={reload}>
             <Icon name="refresh" class="size-4" />
             Refresh
           </button>
@@ -200,6 +203,7 @@ export function Dashboard({
           <div role="group" aria-label="Date range presets" class="flex gap-1">
             {[7, 30, 90].map((days) => (
               <button
+                type="button"
                 key={days}
                 aria-pressed={activePreset === days}
                 class={`h-9 px-3 font-hand text-xl whitespace-nowrap ${activePreset === days ? "circled font-bold text-ink" : "font-medium text-muted hover:text-ink"}`}
@@ -255,7 +259,7 @@ export function Dashboard({
               <p role="alert" class="font-semibold text-danger">
                 {error}
               </p>
-              <button class="button mt-4" onClick={reload}>
+              <button type="button" class="button mt-4" onClick={reload}>
                 Try again
               </button>
             </div>

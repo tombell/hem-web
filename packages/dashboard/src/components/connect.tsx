@@ -91,7 +91,7 @@ export function Connect({
               {error}
             </p>
           )}
-          <button class="primary w-full" disabled={busy || !value.trim()}>
+          <button type="submit" class="primary w-full" disabled={busy || !value.trim()}>
             {busy ? "Connecting…" : "Connect to Hem"}
           </button>
         </form>

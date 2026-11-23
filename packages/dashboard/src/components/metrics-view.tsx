@@ -40,6 +40,7 @@ export function MetricsView({
             const current = group.key === selected?.key;
             return (
               <button
+                type="button"
                 class={`sketch wiggle flex flex-col p-3 text-left sm:p-4 ${tilts[index % tilts.length]} ${current ? "bg-hl-yellow/45 shadow-[3px_4px_0_var(--color-ink)]" : "hover:bg-hl-yellow/20"}`}
                 key={group.key}
                 aria-pressed={current}
