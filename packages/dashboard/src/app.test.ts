@@ -7,7 +7,7 @@ import { App } from "./app";
 
 let container: HTMLDivElement;
 let fetcher: ReturnType<typeof vi.fn<(url: string, options: RequestInit) => Promise<Response>>>;
-beforeEach(() => {
+beforeEach(async () => {
   history.replaceState(null, "", "/dashboard/?start=2026-11-01&end=2026-11-03");
   container = document.createElement("div");
   document.body.append(container);
@@ -32,10 +32,10 @@ beforeEach(() => {
         }),
   );
   vi.stubGlobal("fetch", fetcher);
-  act(() => render(h(App, {}), container));
+  await act(() => render(h(App, {}), container));
 });
-afterEach(() => {
-  act(() => render(null, container));
+afterEach(async () => {
+  await act(() => render(null, container));
   container.remove();
   vi.unstubAllGlobals();
 });

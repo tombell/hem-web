@@ -18,7 +18,6 @@ export default defineConfig({
       // Temporarily off while migrating to @cloudflare/oxlint-config.
       // Enable each rule with its fixes in a separate commit.
       "typescript/no-explicit-any": "off",
-      "typescript/no-floating-promises": "off",
       "typescript/no-misused-promises": "off",
       "typescript/no-non-null-assertion": "off",
       "typescript/no-unsafe-argument": "off",
@@ -34,11 +33,6 @@ export default defineConfig({
         // The server and its scripts log to the terminal.
         files: ["packages/server/scripts/**", "packages/server/src/server.ts"],
         rules: { "no-console": "off" },
-      },
-      {
-        // Temporarily off; the preset re-enables it for TypeScript files.
-        files: ["**/*.{ts,tsx,mts,cts}"],
-        rules: { "typescript/no-floating-promises": "off" },
       },
     ],
   },
