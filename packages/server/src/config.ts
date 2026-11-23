@@ -84,7 +84,9 @@ function parsePublicUrl(rawValue: string | undefined): string {
   const value = rawValue?.trim() || "/";
   if (value.startsWith("/") && !value.startsWith("//")) {
     const parsed = new URL(value, "http://localhost");
-    if (!parsed.search && !parsed.hash) return value;
+    if (!parsed.search && !parsed.hash) {
+      return value;
+    }
   } else {
     try {
       const parsed = new URL(value);

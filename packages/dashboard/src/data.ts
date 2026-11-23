@@ -35,14 +35,20 @@ export async function collection<T>(
       signal,
       cache: "no-store",
     });
-    if (!response.ok) throw new ApiError(response.status);
+    if (!response.ok) {
+      throw new ApiError(response.status);
+    }
     const body = await response.json();
-    if (!Array.isArray(body[key]) || typeof body.hasMore !== "boolean")
+    if (!Array.isArray(body[key]) || typeof body.hasMore !== "boolean") {
       throw new Error("Unexpected response from the server.");
+    }
     rows.push(...body[key]);
-    if (!body.hasMore) return rows;
-    if (typeof body.nextCursor !== "string" || cursors.has(body.nextCursor))
+    if (!body.hasMore) {
+      return rows;
+    }
+    if (typeof body.nextCursor !== "string" || cursors.has(body.nextCursor)) {
       throw new Error("The server returned an invalid page cursor.");
+    }
     cursors.add(body.nextCursor);
     params.set("cursor", body.nextCursor);
   }
@@ -59,7 +65,9 @@ export function day(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 export function rangeDays(start: string, end: string): string[] {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) return [];
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) {
+    return [];
+  }
   const first = new Date(`${start}T00:00:00Z`);
   const last = new Date(`${end}T00:00:00Z`);
   if (
@@ -67,10 +75,13 @@ export function rangeDays(start: string, end: string): string[] {
     !Number.isFinite(+last) ||
     first.toISOString().slice(0, 10) !== start ||
     last.toISOString().slice(0, 10) !== end
-  )
+  ) {
     return [];
+  }
   const count = Math.round((+last - +first) / 86400000) + 1;
-  if (count < 1 || count > 366) return [];
+  if (count < 1 || count > 366) {
+    return [];
+  }
   return Array.from({ length: count }, (_, i) =>
     new Date(+first + i * 86400000).toISOString().slice(0, 10),
   );
@@ -87,7 +98,9 @@ export function metricSeries(rows: DailyMetric[]) {
   >();
   for (const row of rows) {
     const key = JSON.stringify([row.metric, row.unit]);
-    if (!groups.has(key)) groups.set(key, { key, metric: row.metric, unit: row.unit, rows: [] });
+    if (!groups.has(key)) {
+      groups.set(key, { key, metric: row.metric, unit: row.unit, rows: [] });
+    }
     groups.get(key)!.rows.push(row);
   }
   return [...groups.values()].toSorted((a, b) => a.metric.localeCompare(b.metric));
@@ -103,8 +116,12 @@ export function quantity(value: { value: number; unit: string } | null) {
 
 export function sourceName(source: unknown, index: number): string {
   if (source && typeof source === "object") {
-    if ("deviceName" in source && typeof source.deviceName === "string") return source.deviceName;
-    if ("app" in source && typeof source.app === "string") return source.app;
+    if ("deviceName" in source && typeof source.deviceName === "string") {
+      return source.deviceName;
+    }
+    if ("app" in source && typeof source.app === "string") {
+      return source.app;
+    }
   }
   return `Source ${index + 1}`;
 }

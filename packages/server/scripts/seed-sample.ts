@@ -16,21 +16,31 @@ const { values } = parseArgs({
 });
 const days = Number(values.days);
 const seed = Number(values.seed);
-if (!Number.isInteger(days) || days < 1 || days > 1000) throw new Error("--days must be 1–1000");
-if (!Number.isInteger(seed)) throw new Error("--seed must be an integer");
+if (!Number.isInteger(days) || days < 1 || days > 1000) {
+  throw new Error("--days must be 1–1000");
+}
+if (!Number.isInteger(seed)) {
+  throw new Error("--seed must be an integer");
+}
 
 const dbPath = resolve(dirname(fileURLToPath(import.meta.url)), "../data/sample.sqlite");
-for (const suffix of ["", "-wal", "-shm"]) rmSync(`${dbPath}${suffix}`, { force: true });
+for (const suffix of ["", "-wal", "-shm"]) {
+  rmSync(`${dbPath}${suffix}`, { force: true });
+}
 
 const db = openDatabase(dbPath);
 const totals: Record<string, number> = {};
 let imports = 0;
 for (const payload of samplePayloads({ days, seed })) {
   const result = validateHealthPayload(JSON.parse(JSON.stringify(payload)));
-  if (!result.ok) throw new Error(`Generated payload is invalid: ${result.error}`);
+  if (!result.ok) {
+    throw new Error(`Generated payload is invalid: ${result.error}`);
+  }
   const raw = JSON.stringify(result.payload);
   const { counts } = importHealthPayload(db, result.payload, raw);
-  for (const [key, count] of Object.entries(counts)) totals[key] = (totals[key] ?? 0) + count;
+  for (const [key, count] of Object.entries(counts)) {
+    totals[key] = (totals[key] ?? 0) + count;
+  }
   imports++;
 }
 db.close();

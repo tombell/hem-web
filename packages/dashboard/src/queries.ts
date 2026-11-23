@@ -30,12 +30,16 @@ export function createSession(token: string) {
     );
     function cancel() {
       $active.set(false);
-      for (const controller of controllers) controller.abort();
+      for (const controller of controllers) {
+        controller.abort();
+      }
       const cacheKey = $store.key;
       // Nanoquery settles its cache after the fetcher. Remove cancelled results afterwards.
       void $store.value?.promise
         ?.finally(() => {
-          if (cacheKey) cache.delete(cacheKey);
+          if (cacheKey) {
+            cache.delete(cacheKey);
+          }
         })
         .catch(() => {});
       $store.set({ loading: false });
@@ -50,7 +54,9 @@ export function createSession(token: string) {
     $sources: sources.$store,
     query,
     dispose() {
-      for (const cancel of cancellations) cancel();
+      for (const cancel of cancellations) {
+        cancel();
+      }
       cache.clear();
       token = "";
     },

@@ -244,7 +244,9 @@ test("disconnect aborts a pending query and ignores its late response", async ()
   let signal: AbortSignal | undefined;
   const original = fetcher.getMockImplementation()!;
   fetcher.mockImplementation((url, options) => {
-    if (!url.includes("/daily-metrics")) return original(url, options);
+    if (!url.includes("/daily-metrics")) {
+      return original(url, options);
+    }
     signal = options.signal ?? undefined;
     return new Promise<Response>((done) => {
       resolve = done;

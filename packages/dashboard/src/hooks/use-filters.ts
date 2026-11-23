@@ -9,7 +9,9 @@ export function useFilters() {
   }, []);
   function update(values: Record<string, string>) {
     const next = new URLSearchParams(location.search);
-    for (const [key, value] of Object.entries(values)) next.set(key, value);
+    for (const [key, value] of Object.entries(values)) {
+      next.set(key, value);
+    }
     history.pushState(null, "", `${location.pathname}?${next}`);
     setParams(next);
   }

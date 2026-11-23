@@ -46,7 +46,9 @@ beforeEach(() => {
 
 afterEach(async () => {
   await server.close();
-  if (db.open) db.close();
+  if (db.open) {
+    db.close();
+  }
 });
 
 describe("OpenAPI runtime contract", () => {
@@ -159,7 +161,9 @@ function expectSchema(schema: Record<string, unknown>, value: unknown): void {
 }
 
 function resolveReference(value: any): any {
-  if (!value?.$ref) return value;
+  if (!value?.$ref) {
+    return value;
+  }
   return value.$ref
     .slice(2)
     .split("/")
@@ -167,11 +171,15 @@ function resolveReference(value: any): any {
 }
 
 function collectValues(value: unknown, key: string): unknown[] {
-  if (typeof value !== "object" || value === null) return [];
+  if (typeof value !== "object" || value === null) {
+    return [];
+  }
 
   const values: unknown[] = [];
   for (const [entryKey, entryValue] of Object.entries(value)) {
-    if (entryKey === key) values.push(entryValue);
+    if (entryKey === key) {
+      values.push(entryValue);
+    }
     values.push(...collectValues(entryValue, key));
   }
   return values;

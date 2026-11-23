@@ -129,7 +129,9 @@ export function samplePayloads({
           duration: { unit: "min", value: minutes },
           activeEnergy: { unit: "kcal", value: round(minutes * between(6, 11)) },
         };
-        if (activity[1]) workout.distance = { unit: "km", value: round(minutes / activity[1], 2) };
+        if (activity[1]) {
+          workout.distance = { unit: "km", value: round(minutes / activity[1], 2) };
+        }
         (random() < 0.8 ? watchData : phoneData).workouts.push(workout);
       }
     }
@@ -148,10 +150,14 @@ export function samplePayloads({
           ["asleepCore", between(15, 30)],
           ["asleepREM", between(cycle < 2 ? 10 : 25, cycle < 2 ? 20 : 45)],
         ];
-        if (random() < 0.4) stages.push(["awake", between(2, 9)]);
+        if (random() < 0.4) {
+          stages.push(["awake", between(2, 9)]);
+        }
         for (const [value, minutes] of stages) {
           const end = Math.min(cursor + minutes * MINUTE, wake);
-          if (end - cursor < MINUTE) break;
+          if (end - cursor < MINUTE) {
+            break;
+          }
           watchData.sleep.push({ value, start: iso(cursor), end: iso(end) });
           cursor = end;
         }
@@ -211,8 +217,9 @@ function weekly(source: SourceInfo, data: SourceData, firstDay: Date, now: Date)
       payload.categorySamples.length +
       payload.workouts.length +
       payload.sleep.length
-    )
+    ) {
       payloads.push(payload);
+    }
     start = end;
   }
   return payloads;

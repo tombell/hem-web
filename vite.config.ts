@@ -20,7 +20,6 @@ export default defineConfig({
       "typescript/array-type": "off",
       "unicorn/catch-error-name": "off",
       "import/consistent-type-specifier-style": "off",
-      curly: "off",
       "react/button-has-type": "off",
       "react/immutability": "off",
       "react/purity": "off",

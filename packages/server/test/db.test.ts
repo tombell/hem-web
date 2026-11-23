@@ -15,7 +15,9 @@ import {
 let temporaryDirectory: string | undefined;
 
 afterEach(() => {
-  if (temporaryDirectory) rmSync(temporaryDirectory, { force: true, recursive: true });
+  if (temporaryDirectory) {
+    rmSync(temporaryDirectory, { force: true, recursive: true });
+  }
   temporaryDirectory = undefined;
 });
 
