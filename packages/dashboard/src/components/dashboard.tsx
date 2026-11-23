@@ -47,9 +47,10 @@ export function Dashboard({
   const [params, update] = useFilters();
   const requestedView = params.get("view");
   const view = views.find((name) => name === requestedView) ?? "Overview";
-  const sourceKey = sources.some((source) => source.sourceKey === params.get("source"))
-    ? params.get("source")!
-    : sources[0]?.sourceKey || "";
+  const requestedSource = params.get("source");
+  const sourceKey =
+    sources.find((source) => source.sourceKey === requestedSource)?.sourceKey ??
+    (sources[0]?.sourceKey || "");
   // Default dates follow the current day whenever the dashboard renders.
   // eslint-disable-next-line react/purity
   const now = new Date();

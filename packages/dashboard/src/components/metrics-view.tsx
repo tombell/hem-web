@@ -36,7 +36,10 @@ export function MetricsView({
       {overview && (
         <div class="mb-6 grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] sm:gap-4">
           {groups.map((group, index) => {
-            const latest = group.rows.at(-1)!;
+            const latest = group.rows.at(-1);
+            if (!latest) {
+              return null;
+            }
             const current = group.key === selected?.key;
             return (
               <button
