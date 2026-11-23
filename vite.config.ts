@@ -21,7 +21,6 @@ export default defineConfig({
       "react/immutability": "off",
       "react/purity": "off",
       "react-hooks/exhaustive-deps": "off",
-      "typescript/no-duplicate-type-constituents": "off",
       "typescript/no-explicit-any": "off",
       "typescript/no-floating-promises": "off",
       "typescript/no-misused-promises": "off",
