@@ -54,27 +54,9 @@ export function registerAppleHealthRoutes(
       });
     }
 
+    let result: ReturnType<typeof importHealthPayload>;
     try {
-      const result = importHealthPayload(db, validation.payload, rawBody);
-      const status = result.status === "created" ? 201 : 200;
-
-      logger.info({
-        counts: result.counts,
-        durationMs: elapsedMs(startedAt),
-        event: "apple_health_import",
-        importId: result.importId,
-        rangeEnd: validation.payload.range.end,
-        rangeStart: validation.payload.range.start,
-        sourceKey: result.sourceKey,
-        status: result.status,
-      });
-
-      return sendJson(reply, status, {
-        counts: result.counts,
-        importId: result.importId,
-        ok: true,
-        status: result.status,
-      });
+      result = importHealthPayload(db, validation.payload, rawBody);
     } catch {
       logError(logger, startedAt, "server_error");
       return sendJson(reply, 500, {
@@ -82,6 +64,24 @@ export function registerAppleHealthRoutes(
         ok: false,
       });
     }
+
+    logger.info({
+      counts: result.counts,
+      durationMs: elapsedMs(startedAt),
+      event: "apple_health_import",
+      importId: result.importId,
+      rangeEnd: validation.payload.range.end,
+      rangeStart: validation.payload.range.start,
+      sourceKey: result.sourceKey,
+      status: result.status,
+    });
+
+    return sendJson(reply, result.status === "created" ? 201 : 200, {
+      counts: result.counts,
+      importId: result.importId,
+      ok: true,
+      status: result.status,
+    });
   });
 
   registerMethodNotAllowed(server, "/apple-health/import", "POST");

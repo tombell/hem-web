@@ -19,7 +19,6 @@ export function registerHealthRoutes(
     const startedAt = performance.now();
     try {
       db.prepare("SELECT 1").get();
-      return sendJson(reply, 200, { ok: true });
     } catch {
       logger.error({
         durationMs: elapsedMs(startedAt),
@@ -30,6 +29,7 @@ export function registerHealthRoutes(
         ok: false,
       });
     }
+    return sendJson(reply, 200, { ok: true });
   });
 
   registerMethodNotAllowed(server, "/health", "GET");
