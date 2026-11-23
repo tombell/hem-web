@@ -823,16 +823,13 @@ async function postRaw(
   const authorization = Object.hasOwn(headers, "authorization")
     ? headers.authorization
     : "Bearer test-secret";
-  const requestHeaders: Record<string, string> = {
-    "content-type": "application/json",
-  };
-
-  if (authorization !== undefined) {
-    requestHeaders.authorization = authorization;
-  }
+  const contentType = "application/json";
 
   return server.inject({
-    headers: requestHeaders,
+    headers:
+      authorization === undefined
+        ? { "content-type": contentType }
+        : { authorization, "content-type": contentType },
     method: "POST",
     payload: rawBody,
     url: "/apple-health/import",
