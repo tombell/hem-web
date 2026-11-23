@@ -159,7 +159,7 @@ export function validateHealthPayload(input: unknown): ValidationResult {
     payload: {
       categorySamples: categorySamplesResult.value,
       dailyMetrics: dailyMetricsResult.value,
-      generatedAt: input.generatedAt,
+      generatedAt: generatedAtResult.value,
       range: rangeResult.value,
       samples: samplesResult.value,
       schemaVersion: 1,
@@ -205,23 +205,12 @@ function validateSource(input: unknown): ValidationResultFor<SourceInfo> {
     return result;
   }
 
-  const deviceIdentifier = input.deviceIdentifier?.trim();
-  const deviceName = input.deviceName?.trim();
-  if (!deviceIdentifier && !deviceName) {
+  const source = result.value;
+  if (!source.deviceIdentifier?.trim() && !source.deviceName?.trim()) {
     return invalid("source.deviceIdentifier or source.deviceName is required");
   }
 
-  return {
-    ok: true,
-    value: {
-      app: input.app,
-      bundleIdentifier: input.bundleIdentifier,
-      deviceIdentifier: input.deviceIdentifier,
-      deviceName: input.deviceName,
-      deviceSystemName: input.deviceSystemName,
-      deviceSystemVersion: input.deviceSystemVersion,
-    },
-  };
+  return { ok: true, value: source };
 }
 
 function validateRange(input: unknown): ValidationResultFor<RangeInfo> {
@@ -229,10 +218,17 @@ function validateRange(input: unknown): ValidationResultFor<RangeInfo> {
     return invalid("range must be an object");
   }
 
-  for (const key of ["calendar", "kind", "timeZone"] as const) {
-    if (!nonEmptyString(input[key])) {
-      return invalid(`range.${key} is required`);
-    }
+  const calendar = requireString(input.calendar, "range.calendar");
+  if (!calendar.ok) {
+    return calendar;
+  }
+  const kind = requireString(input.kind, "range.kind");
+  if (!kind.ok) {
+    return kind;
+  }
+  const timeZone = requireString(input.timeZone, "range.timeZone");
+  if (!timeZone.ok) {
+    return timeZone;
   }
 
   const startResult = requireIsoDateTime(input.start, "range.start");
@@ -252,11 +248,11 @@ function validateRange(input: unknown): ValidationResultFor<RangeInfo> {
   return {
     ok: true,
     value: {
-      calendar: input.calendar,
-      end: input.end,
-      kind: input.kind,
-      start: input.start,
-      timeZone: input.timeZone,
+      calendar: calendar.value,
+      end: endResult.value,
+      kind: kind.value,
+      start: startResult.value,
+      timeZone: timeZone.value,
     },
   };
 }
@@ -295,10 +291,13 @@ function validateSampleRecord(input: unknown, index: number): ValidationResultFo
     return invalid(`samples[${index}] must be an object`);
   }
 
-  for (const key of ["type", "unit"] as const) {
-    if (!nonEmptyString(input[key])) {
-      return invalid(`samples[${index}].${key} is required`);
-    }
+  const type = requireString(input.type, `samples[${index}].type`);
+  if (!type.ok) {
+    return type;
+  }
+  const unit = requireString(input.unit, `samples[${index}].unit`);
+  if (!unit.ok) {
+    return unit;
   }
 
   const intervalResult = validateInterval(input, `samples[${index}]`);
@@ -318,11 +317,10 @@ function validateSampleRecord(input: unknown, index: number): ValidationResultFo
   return {
     ok: true,
     value: {
-      end: input.end,
+      ...intervalResult.value,
       id: idResult.value,
-      start: input.start,
-      type: input.type,
-      unit: input.unit,
+      type: type.value,
+      unit: unit.value,
       value: input.value,
     },
   };
@@ -336,10 +334,13 @@ function validateCategorySampleRecord(
     return invalid(`categorySamples[${index}] must be an object`);
   }
 
-  for (const key of ["type", "value"] as const) {
-    if (!nonEmptyString(input[key])) {
-      return invalid(`categorySamples[${index}].${key} is required`);
-    }
+  const type = requireString(input.type, `categorySamples[${index}].type`);
+  if (!type.ok) {
+    return type;
+  }
+  const value = requireString(input.value, `categorySamples[${index}].value`);
+  if (!value.ok) {
+    return value;
   }
 
   const intervalResult = validateInterval(input, `categorySamples[${index}]`);
@@ -355,11 +356,10 @@ function validateCategorySampleRecord(
   return {
     ok: true,
     value: {
-      end: input.end,
+      ...intervalResult.value,
       id: idResult.value,
-      start: input.start,
-      type: input.type,
-      value: input.value,
+      type: type.value,
+      value: value.value,
     },
   };
 }
@@ -369,8 +369,9 @@ function validateWorkoutRecord(input: unknown, index: number): ValidationResultF
     return invalid(`workouts[${index}] must be an object`);
   }
 
-  if (!nonEmptyString(input.activityType)) {
-    return invalid(`workouts[${index}].activityType is required`);
+  const activityType = requireString(input.activityType, `workouts[${index}].activityType`);
+  if (!activityType.ok) {
+    return activityType;
   }
 
   const intervalResult = validateInterval(input, `workouts[${index}]`);
@@ -383,22 +384,31 @@ function validateWorkoutRecord(input: unknown, index: number): ValidationResultF
     return idResult;
   }
 
-  for (const key of ["duration", "activeEnergy", "distance"] as const) {
-    if (input[key] !== undefined && !isQuantityValue(input[key])) {
-      return invalid(`workouts[${index}].${key} must have numeric value and unit`);
-    }
+  const duration = validateOptionalQuantity(input.duration, `workouts[${index}].duration`);
+  if (!duration.ok) {
+    return duration;
+  }
+  const activeEnergy = validateOptionalQuantity(
+    input.activeEnergy,
+    `workouts[${index}].activeEnergy`,
+  );
+  if (!activeEnergy.ok) {
+    return activeEnergy;
+  }
+  const distance = validateOptionalQuantity(input.distance, `workouts[${index}].distance`);
+  if (!distance.ok) {
+    return distance;
   }
 
   return {
     ok: true,
     value: {
-      activeEnergy: input.activeEnergy,
-      activityType: input.activityType,
-      distance: input.distance,
-      duration: input.duration,
-      end: input.end,
+      ...intervalResult.value,
+      activeEnergy: activeEnergy.value,
+      activityType: activityType.value,
+      distance: distance.value,
+      duration: duration.value,
       id: idResult.value,
-      start: input.start,
     },
   };
 }
@@ -408,8 +418,9 @@ function validateSleepRecord(input: unknown, index: number): ValidationResultFor
     return invalid(`sleep[${index}] must be an object`);
   }
 
-  if (!nonEmptyString(input.value)) {
-    return invalid(`sleep[${index}].value is required`);
+  const value = requireString(input.value, `sleep[${index}].value`);
+  if (!value.ok) {
+    return value;
   }
 
   const intervalResult = validateInterval(input, `sleep[${index}]`);
@@ -425,10 +436,9 @@ function validateSleepRecord(input: unknown, index: number): ValidationResultFor
   return {
     ok: true,
     value: {
-      end: input.end,
+      ...intervalResult.value,
       id: idResult.value,
-      start: input.start,
-      value: input.value,
+      value: value.value,
     },
   };
 }
@@ -468,19 +478,44 @@ function validateOptionalId(input: unknown, path: string): ValidationResultFor<s
   return { ok: true, value: input.trim() };
 }
 
-function validateOptionalStrings(
+function validateOptionalStrings<K extends string>(
   input: Record<string, unknown>,
   prefix: string,
-  keys: Array<string>,
-): ValidationResultFor<void> {
+  keys: ReadonlyArray<K>,
+): ValidationResultFor<Partial<Record<K, string>>> {
+  const values: Partial<Record<K, string>> = {};
   for (const key of keys) {
     const value = input[key];
-    if (value !== undefined && typeof value !== "string") {
+    if (value === undefined) {
+      continue;
+    }
+    if (typeof value !== "string") {
       return invalid(`${prefix}.${key} must be a string when provided`);
     }
+    values[key] = value;
   }
 
-  return { ok: true, value: undefined };
+  return { ok: true, value: values };
+}
+
+function validateOptionalQuantity(
+  input: unknown,
+  path: string,
+): ValidationResultFor<QuantityValue | undefined> {
+  if (input === undefined) {
+    return { ok: true, value: undefined };
+  }
+  if (!isQuantityValue(input)) {
+    return invalid(`${path} must have numeric value and unit`);
+  }
+  return { ok: true, value: input };
+}
+
+function requireString(input: unknown, path: string): ValidationResultFor<string> {
+  if (!nonEmptyString(input)) {
+    return invalid(`${path} is required`);
+  }
+  return { ok: true, value: input };
 }
 
 function requireIsoDateTime(input: unknown, path: string): ValidationResultFor<string> {
@@ -495,7 +530,10 @@ function requireIsoDateTime(input: unknown, path: string): ValidationResultFor<s
   return { ok: true, value: input };
 }
 
-function validateInterval(input: Record<string, any>, path: string): ValidationResultFor<void> {
+function validateInterval(
+  input: Record<string, unknown>,
+  path: string,
+): ValidationResultFor<{ end: string; start: string }> {
   const startResult = requireIsoDateTime(input.start, `${path}.start`);
   if (!startResult.ok) {
     return startResult;
@@ -510,7 +548,7 @@ function validateInterval(input: Record<string, any>, path: string): ValidationR
     return invalid(`${path}.end must not be before ${path}.start`);
   }
 
-  return { ok: true, value: undefined };
+  return { ok: true, value: { end: endResult.value, start: startResult.value } };
 }
 
 function validateContainedIntervals(
@@ -530,7 +568,7 @@ function validateContainedIntervals(
   return { ok: true, value: undefined };
 }
 
-function isRecord(value: unknown): value is Record<string, any> {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
